@@ -1,0 +1,20 @@
+#bookings p.loggedinas {opacity: 0.1;}
+#bookings p.loggedinas {zoom: 1; filter: alpha(opacity=10);}	/* http://css-tricks.com/css-transparency-settings-for-all-broswers/ */
+#bookings table.bookingslist th:first-child, table.bookingslist td:first-child {text-align: right; padding-right: 22px; min-width: 19em;}
+#bookings table.bookingslist th {width: 8em; padding-right: 20px;}
+#bookings table.bookingslist .booked, #bookings table.bookingslist .booked a {color: #bbb;}
+#bookings table.bookingslist tr.newweek td {padding-top: 20px;}
+#bookings table.bookingslist tr.firstprivatedate td {padding-top: 2.2em; padding-bottom: 1em; font-style: italic;}
+#bookings table.bookingslist td {white-space: nowrap;}
+#bookings table.bookingslist td a.add {border-bottom: 0; color: #bbb;}
+#bookings table.bookingslist td.closed {color: #bbb; text-align: center;}
+#bookings .bookingform .description {font-style: italic; color: #555;}
+#bookings .bookingform table td, #bookings .bookingform table th {border-bottom: 1px #eee solid; padding: 4px;}
+#bookings .bookingform table {border: 0; border-collapse: collapse; border-spacing: 0;}
+#bookings .bookingform th:first-child, #bookings .bookingform td:first-child {max-width: 250px; padding-right: 10px;}
+#bookings .bookingform tr.visitType td {border-bottom: none;}
+#bookings .bookingform tr.visitType input {margin-bottom: 8px;}
+#bookings .bookingform tr.visitTypeOther input {margin-left: 21px; position: relative; top: -12px;}
+#bookings .bookingform tr.visitTypeOther td {border-top: 0;}
+#bookings .bookingform tr.visitTypeOther td.title {color: white;}
+
