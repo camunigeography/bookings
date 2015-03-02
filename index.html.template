@@ -2,6 +2,7 @@
 
 # Copy this file to index.html with the correct settings for your server.
 
+
 # Define settings for this installation
 $settings = array (
 	'applicationName' => 'Online booking request',
@@ -12,7 +13,23 @@ $settings = array (
 	'serverAdministrator' => 'webmaster@example.com',
 	'recipient' => 'groupvisits@example.com',				// Who to send the e-mail requests to
 	'feedbackRecipient' => 'groupvisits@example.com',	// General feedback form recipient
+	'formValidationCallback' => 'formValidationCallback',
 );
+
+# Define a validation function which defines form constraints
+function formValidationCallback ($unfinalisedData, &$errorMessage = false, &$highlightField = false)
+{
+	# Require details if 'other' selected for type
+	if (($unfinalisedData['visitType'] == 'Some department') && (!strlen ($unfinalisedData['visitTypeOther']))) {
+		$errorMessage = 'You need to give further details for the type of visit.';
+		$highlightField = 'visitTypeOther';
+		return false;
+	}
+	
+	# All tests passed
+	return true;
+}
+
 
 # Load and instantiate the bookings application
 require_once ('bookings.php');
