@@ -698,7 +698,7 @@ class bookings extends frontControllerApplication
 			'database' => $this->settings['database'],
 			'table' => 'requests',
 			'intelligence' => true,
-			'attributes' => $this->formDataBindingAttributes ($place, $date),
+			'attributes' => $this->formDataBindingAttributes (),
 			'exclude' => $exclude,
 			'data' => array ('date' => $date, 'place' => $place, ),
 		));
@@ -763,7 +763,7 @@ class bookings extends frontControllerApplication
 	
 	
 	# Data binding attributes
-	private function formDataBindingAttributes ($place = false, $date = false)
+	private function formDataBindingAttributes ()
 	{
 		# Start an array of attributes
 		$attributes = array ();
@@ -787,11 +787,9 @@ class bookings extends frontControllerApplication
 				$attributes['email'] = array (
 					'description'	=> 'Correspondence by e-mail is preferred where possible.',
 				);
-				if ($place && $date) {
-					$attributes['subsequentdays'] = array (
-						'description'	=> "If you need to stay for more than just the date and slot shown, please give full details here. You must specify specific single days or half-days only. Block bookings will not be accepted.",
-					);
-				}
+				$attributes['subsequentdays'] = array (
+					'description'	=> "If you need to stay for more than just the date and slot shown, please give full details here. You must specify specific single days or half-days only. Block bookings will not be accepted.",
+				);
 				break;
 				
 			case 'bookings_education':
