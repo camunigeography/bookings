@@ -781,47 +781,40 @@ class bookings extends frontControllerApplication
 			'separator' => ',', /* #!# Ideally wouldn't be required - see note in ultimateForm re defaultPresplit */
 		);
 		
-		# Standard attributes
-		switch ($this->settings['database']) {
-			case 'bookings_archives':
-				$attributes['email'] = array (
-					'description'	=> 'Correspondence by e-mail is preferred where possible.',
-				);
-				$attributes['subsequentdays'] = array (
-					'description'	=> "If you need to stay for more than just the date and slot shown, please give full details here. You must specify specific single days or half-days only. Block bookings will not be accepted.",
-				);
-				break;
-				
-			case 'bookings_education':
-				$attributes['visitType'] = array (
-					'heading' => array (3 => 'Type of visit'),
-					'type' => 'radiobuttons',
-					'values' => array (
-						'Polar Museum visit'	=> 'Museum visit - self-guided (run entirely by the teacher or group leader)',
-						'Polar Museum workshop'	=> 'Museum workshop (run by a member of museum staff); Thursdays/Fridays only',
-						'Polar Museum tour'		=> 'Museum tour (led by a member of museum staff) - costs £80',
-						'Polar Museum'			=> 'Other (please give details)',
-					)
-				);
-				$attributes['institutionType'] = array (
-					'heading' => array (3 => 'Details of group'),
-				);
-				$attributes['date'] = array (
-					'heading' => array (3 => 'Details of visit'),
-				);
-				$attributes['country'] = array (
-					'type' => 'select',
-					'values' => form::getCountries ($additionalStart = array ('United Kingdom', 'Group of visitors from multiple countries') ),
-				);
-				$attributes['approved'] = array (
-					'heading' => array (3 => 'Internal notes'),
-					'type' => 'radiobuttons',
-				);
-				$attributes['internalPhoneCallLog'] = array (
-					'rows' => 10,
-				);
-				break;
-		}
+		# Attributes (which may or may not be present, depending on table structure)
+		$attributes['email'] = array (
+			'description'	=> 'Correspondence by e-mail is preferred where possible.',
+		);
+		$attributes['subsequentdays'] = array (
+			'description'	=> "If you need to stay for more than just the date and slot shown, please give full details here. You must specify specific single days or half-days only. Block bookings will not be accepted.",
+		);
+		$attributes['visitType'] = array (
+			'heading' => array (3 => 'Type of visit'),
+			'type' => 'radiobuttons',
+			'values' => array (
+				'Polar Museum visit'	=> 'Museum visit - self-guided (run entirely by the teacher or group leader)',
+				'Polar Museum workshop'	=> 'Museum workshop (run by a member of museum staff); Thursdays/Fridays only',
+				'Polar Museum tour'		=> 'Museum tour (led by a member of museum staff) - costs £80',
+				'Polar Museum'			=> 'Other (please give details)',
+			)
+		);
+		$attributes['institutionType'] = array (
+			'heading' => array (3 => 'Details of group'),
+		);
+		$attributes['date'] = array (
+			'heading' => array (3 => 'Details of visit'),
+		);
+		$attributes['country'] = array (
+			'type' => 'select',
+			'values' => form::getCountries ($additionalStart = array ('United Kingdom', 'Group of visitors from multiple countries') ),
+		);
+		$attributes['approved'] = array (
+			'heading' => array (3 => 'Internal notes'),
+			'type' => 'radiobuttons',
+		);
+		$attributes['internalPhoneCallLog'] = array (
+			'rows' => 10,
+		);
 		
 		# Return the array
 		return $attributes;
