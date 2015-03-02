@@ -1,0 +1,21 @@
+<?php
+
+# Copy this file to index.html with the correct settings for your server.
+
+# Define settings for this installation
+$settings = array (
+	'applicationName' => 'Online booking request',
+	'hostname' => 'localhost',
+	'database' => 'bookings',
+	'password' => 'databasepasswordhere',
+	'tablePrefix' => 'bookings_',
+	'serverAdministrator' => 'webmaster@example.com',
+	'recipient' => 'groupvisits@example.com',				// Who to send the e-mail requests to
+	'feedbackRecipient' => 'groupvisits@example.com',	// General feedback form recipient
+);
+
+# Load and instantiate the bookings application
+require_once ('bookings.php');
+new bookings ($settings);
+
+?>
