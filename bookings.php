@@ -1,6 +1,6 @@
 <?php
 
-#!# Add multi-day listing integration which fills in extra dates automatically (e.g. <baseUrl>/requests/10/edit.html )
+#!# Add multi-day listing integration which fills in extra dates automatically (e.g. at <baseUrl>/requests/10/edit.html )
 #!# Integrated e-mailing when editing records - would need sinenomine support
 #!# Stats system needed to compile booking stats automatically
 
@@ -33,6 +33,7 @@ class bookings extends frontControllerApplication
 			'div' => 'bookings',
 			'tablePrefix' => false,
 			'formDiv' => 'lines ultimateform horizontalonly bookingform',
+			'formValidationCallback' => false,
 		);
 		
 		# Return the defaults
@@ -636,21 +637,13 @@ class bookings extends frontControllerApplication
 		# Add constraints
 		if ($unfinalisedData = $form->getUnfinalisedData ()) {
 			
-			# Checks for education table
-#!# Hard-coded
-			if ($this->settings['requestsTable'] == 'education_requests') {
-				# Require school details
-				$requireSchoolInfo = array ('School', 'Language school', 'Further Education (sixth form)');
-				if (in_array ($unfinalisedData['institutionType'], $requireSchoolInfo) && (!strlen ($unfinalisedData['adults']))) {
-					$form->registerProblem ('schooladutsmissing', 'You need to enter the number of adults for school visits.', 'adults');
-				}
-				
-				# Require details if 'other' selected for type
-				if (($unfinalisedData['visitType'] == 'Polar Museum') && (!strlen ($unfinalisedData['visitTypeOther']))) {
-					$form->registerProblem ('visittypedetailsmissing', 'You need to give further details for the type of visit.', 'visitTypeOther');
-				}
-				if (($unfinalisedData['visitType'] != 'Polar Museum') && (strlen ($unfinalisedData['visitTypeOther']))) {
-					$form->registerProblem ('visittypedetailsadded', 'You gave further details for the type of visit but selected a different option.', 'visitTypeOther');
+			# If a form validation callback function is defined, run this callback to enable additional form constraints to be checked
+			if ($this->settings['formValidationCallback']) {
+				if (is_callable ($this->settings['formValidationCallback'])) {
+					$callbackFunction = $this->settings['formValidationCallback'];
+					if (!$result = $callbackFunction ($unfinalisedData, $errorMessage, $highlightField)) {
+						$form->registerProblem ('error', $errorMessage, $highlightField);
+					}
 				}
 			}
 			
@@ -670,9 +663,10 @@ class bookings extends frontControllerApplication
 		# Data protection statement
 		$form->heading ('p', 'By submitting this form you are agreeing to this information being kept as a record of your visit.');
 		
-		# E-mail the result
+		# E-mail the result; if there is a visitType, show this in the subject line
 		$subject = $this->settings['applicationName'] . ' for ' . timedate::convertBackwardsDateToText (($unfinalisedData ? $unfinalisedData['date'] : $date)) . " in the {$this->places[$place]['labelAbbreviatedLowercase']}";
-		if ($this->settings['requestsTable'] == 'education_requests') {
+		$formSpecification = $form->getSpecification ();
+		if (isSet ($formSpecification['visitType'])) {
 			$subject = "{name} - {visitType|compiled}";
 		}
 		$form->setOutputEmail ($this->settings['recipient'], $this->settings['serverAdministrator'], $subject, NULL, $replyToField = 'email');
@@ -728,7 +722,7 @@ class bookings extends frontControllerApplication
 					'Polar Museum visit'	=> 'Museum visit - self-guided (run entirely by the teacher or group leader)',
 					'Polar Museum workshop'	=> 'Museum workshop (run by a member of museum staff); Thursdays/Fridays only',
 					'Polar Museum tour'		=> 'Museum tour (led by a member of museum staff) - costs £80',
-					'Polar Museum outreach'	=> 'Outreach - will attract a cost',
+					// 'Polar Museum outreach'	=> 'Outreach - will attract a cost',
 					'Polar Museum'			=> 'Other (please give details)',
 				));
 				$attributes['institutionType'] = array ('heading' => array (3 => 'Details of group'), );
@@ -817,7 +811,7 @@ class bookings extends frontControllerApplication
 		# Delegate to iCal class
 		require_once ('ical.php');
 		$ical = new ical ();
-		echo $ical->create ($events, application::pluralise ($this->settings['applicationName']), 'ac.uk.cam.spri', $this->settings['applicationName']);
+		echo $ical->create ($events, application::pluralise ($this->settings['applicationName']), 'University of Cambridge - Departmental code', $this->settings['applicationName']);
 	}
 }
 
