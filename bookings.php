@@ -110,7 +110,11 @@ class bookings extends frontControllerApplication
 			  `approved` int(1) DEFAULT NULL COMMENT 'Approved?'
 			) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Bookings';
 			
-			-- This is an *example* requests table; the specific fields required will be dependent on the installation. The ones starting -- are examples you could include but not enabled by default; all others are mandatory
+			/*
+				This is an *example* requests table; the specific fields required will be dependent on the installation.
+				The ones starting -- are examples you could include but not enabled by default; all others are mandatory.
+				Any fields whose name starts with 'internal' will be shown only to internal users and not general users filling out the request form.
+			*/
 			CREATE TABLE IF NOT EXISTS `requests` (
 			  `id` int(11) NOT NULL COMMENT 'Request no.' PRIMARY KEY,
 		--	  `visitType` enum('Museum visit','Museum workshop','Museum tour','Museum outreach') COLLATE utf8_unicode_ci NOT NULL COMMENT 'Visit type',
@@ -683,7 +687,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Set internal fields to be excluded
-		$exclude = array ('internalVisitContent', 'internalVisitContentOther', 'internalPhoneCallLog');
+		$exclude = $this->databaseConnection->getFieldNames ($this->settings['database'], 'requests', false, $matchingRegexpNoForwardSlashes = '^internal.+');
 		if (!$this->userIsAdministrator) {
 			$exclude[] = 'approved';
 		}
