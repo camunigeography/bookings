@@ -90,6 +90,74 @@ class bookings extends frontControllerApplication
 	}
 	
 	
+	
+	
+	# Database structure definition
+	public function databaseStructure ()
+	{
+		return "
+			CREATE TABLE IF NOT EXISTS `administrators` (
+			  `username` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Username' PRIMARY KEY,
+			  `editingStateRequests` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'State'
+			) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='System administrators';
+			
+			CREATE TABLE IF NOT EXISTS `bookings` (
+			  `id` int(11) NOT NULL COMMENT 'Automatic key' PRIMARY KEY,
+			  `date` date NOT NULL COMMENT 'Date',
+			  `place` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place',
+			  `slot` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place slot',
+			  `bookingFor` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Value',
+			  `approved` int(1) DEFAULT NULL COMMENT 'Approved?'
+			) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Bookings';
+			
+			-- This is an *example* requests table; the specific fields required will be dependent on the installation. The ones starting -- are examples you could include but not enabled by default; all others are mandatory
+			CREATE TABLE IF NOT EXISTS `requests` (
+			  `id` int(11) NOT NULL COMMENT 'Request no.' PRIMARY KEY,
+		--	  `visitType` enum('Museum visit','Museum workshop','Museum tour','Museum outreach') COLLATE utf8_unicode_ci NOT NULL COMMENT 'Visit type',
+		--	  `visitTypeOther` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT '(Specific details)',
+		--	  `institutionType` enum('','School','Language school','Further Education (sixth form)','Higher Education (degree-level)','Other') COLLATE utf8_unicode_ci NOT NULL COMMENT 'Type of institution',
+			  `bookingFor` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Name of group or school',
+		--	  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Name of organiser',
+		--	  `address` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Address',
+		--	  `postcode` varchar(9) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Postcode',
+		--	  `country` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Country',
+		--	  `telephone` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Phone number',
+			  `email` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'E-mail',
+		--	  `revisit` enum('','Yes','No') COLLATE utf8_unicode_ci NOT NULL COMMENT 'Have you visited before?',
+		--	  `heardof` enum('','Word of mouth','Visited before','Live locally','Newspaper','Other printed materials','Website','Twitter','Facebook','Other') COLLATE utf8_unicode_ci NOT NULL COMMENT 'How did you hear about us?',
+			  `date` date NOT NULL COMMENT 'Requested date',
+		--	  `alternativeDates` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Possible alternative dates',
+			  `place` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Preferred timeslot',
+		--	  `participants` int(2) NOT NULL COMMENT 'Number of participants<br />(max 25 adults, or one class of children)',
+		--	  `ageGroups` set('0-5 years old (Early years)','5-7 years old (UK: KS1)','7-11 years old (UK: KS2)','11-14 years old (UK: KS3)','14-18 years old','Higher Education','Adult') COLLATE utf8_unicode_ci NOT NULL COMMENT 'Age group(s)',
+		--	  `adults` int(2) DEFAULT NULL COMMENT 'Number of accompanying adults (for groups of children under the age of 18)',
+		--	  `specialNeeds` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Any special needs?',
+		--	  `comments` text COLLATE utf8_unicode_ci COMMENT 'Any other information/comments/requests',
+			  `approved` enum('Unreviewed','Approved','Rejected') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Unreviewed' COMMENT 'Approved?',
+		--	  `internalVisitContent` set('Some package','Another work package','Third option','Other') COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Visit content',
+		--	  `internalVisitContentOther` text COLLATE utf8_unicode_ci COMMENT 'Visit content (detail for other)',
+		--	  `internalPhoneCallLog` text COLLATE utf8_unicode_ci COMMENT 'Phone call log',
+			  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatic timestamp'
+			) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Table of requests';
+			
+			CREATE TABLE IF NOT EXISTS `settings` (
+			  `id` int(11) NOT NULL COMMENT 'Automatic key (ignored)' PRIMARY KEY,
+			  `listMonthsAheadPublic` int(2) NOT NULL DEFAULT '3' COMMENT 'How many months ahead to list (public)',
+			  `listMonthsAheadPrivate` int(2) NOT NULL DEFAULT '12' COMMENT 'How many months ahead to list (private)',
+			  `excludeNextDays` int(2) NOT NULL DEFAULT '5' COMMENT 'How many days from today it should not list',
+			  `weekdays` set('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Show which days?',
+			  `places` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place title URL monikers',
+			  `placeLabels` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place labels',
+			  `placeLabelsAbbreviated` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place labels (abbreviated)',
+			  `placeSlots` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Slots per place title',
+			  `placeTimePeriods` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place time periods (CSV)',
+			  `introductoryTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Introductory text',
+			  `bookingPageTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Booking page introductory text'
+			) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Settings';
+		";
+	}
+	
+	
 	# Additional processing
 	public function main ()
 	{
