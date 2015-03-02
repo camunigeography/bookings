@@ -4,6 +4,10 @@
 require_once ('frontControllerApplication.php');
 class bookings extends frontControllerApplication
 {
+	# Class properties
+	private $firstPrivateDate = false;
+	
+	
 	# Function to assign defaults additional to the general application defaults
 	public function defaults ()
 	{
@@ -17,10 +21,10 @@ class bookings extends frontControllerApplication
 			'administrators' => true,
 			'settings' => true,
 			'serverAdministrator'	=> NULL,	// E-mail address of the server administrator
-			'csv' => NULL,
 			'recipient'	=> NULL,	// Who to send the e-mail requests to
 			'form' => true,
 			'div' => 'bookings',
+			'tablePrefix' => false,
 		);
 		
 		# Return the defaults
@@ -37,6 +41,14 @@ class bookings extends frontControllerApplication
 				'description' => 'Booking request',
 				'url' => '',
 				'tab' => 'Bookings',
+				'icon' => 'clock',
+			),
+			'edit' => array (
+				'description' => 'Booking requests - edit',
+				'url' => 'edit.html',
+				'tab' => 'Edit',
+				'administrator' => true,
+				'icon' => 'pencil',
 			),
 			'request' => array (
 				'description' => 'Make a booking request',
@@ -54,30 +66,23 @@ class bookings extends frontControllerApplication
 	public function main ()
 	{
 		# Load required libraries
-		require_once ('csv.php');
 		require_once ('timedate.php');
 		
 		# Process the place titles
 		if ($this->action != 'settings') {
 			$placeTitles = explode ("\n", $this->settings['placeTitles']);
+			$this->settings['placeTitles'] = array ();
 			foreach ($placeTitles as $index => $placeTitle) {
-				$placeTitles[$index] = trim ($placeTitle);
+				$place = $index + 1;	// Indexed from 1; the numeric value is what is stored, not the label
+				$this->settings['placeTitles'][$place] = trim ($placeTitle);
 			}
-			$this->settings['placeTitles'] = $placeTitles;
 		}
-		
-$this->settings['placeTitles'] = array (
-	1 => 'Morning1',
-	2 => 'Morning2',
-	3 => 'Afternoon1',
-	4 => 'Afternoon2',
-);
-
-		# Get the data or end
-		if (!$this->data = $this->getData ()) {return false;}
 		
 		# Get the dates
 		$this->dates = $this->getDates ();
+		
+		# Get the data or end
+		if (!$this->data = $this->getData ()) {return false;}
 		
 	}
 	
@@ -86,7 +91,15 @@ $this->settings['placeTitles'] = array (
 	public function getDates ()
 	{
 		# Create an array of dates in future months
-		$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAhead'], 'Y-m-d', $removeWeekends = true);
+		$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPublic'], 'Y-m-d', $removeWeekends = true);
+		
+		# If the user is an admin, show the fuller list, and determine the first date that is private
+		if ($this->userIsAdministrator) {
+			$datesPublic = $dates;
+			$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPrivate'], 'Y-m-d', $removeWeekends = true);
+			$privateDates = array_diff ($dates, $datesPublic);
+			$this->firstPrivateDate = reset (array_values ($privateDates));
+		}
 		
 		# Remove earliest dates
 		for ($i = 0; $i < $this->settings['excludeNextDays']; $i++) {
@@ -101,86 +114,193 @@ $this->settings['placeTitles'] = array (
 	# Function to get the data
 	private function getData ()
 	{
-		# Get the CSV data
-		if (!$rawdata = csv::getData ($this->settings['csv'])) {
-			echo $this->reportError ($adminMessage = "Data from {$this->settings['csv']} could not be read.\n\nPerhaps you need to do\nmount -a\nas root on the webserver.", $publicMessage = 'Error: There was a problem reading the database. The server administrator has been informed and will fix the problem as soon as possible.');
-			return false;
+		# Determine the first and last dates, so that only this range is obtained for efficiency
+		$firstDate = $this->dates[0];
+		$untilDate = end (array_values ($this->dates));
+		
+		# Get any data for between these ranges
+		$query = "SELECT
+			*
+			FROM {$this->settings['database']}.{$this->settings['table']}
+			WHERE
+				    `date` >= '{$firstDate}'
+				AND `date` <= '{$untilDate}'
+			ORDER BY `date`, place
+		;";
+		$rawdata = $this->databaseConnection->getData ($query);
+		
+		# Regroup by date then place
+		$data = array ();
+		foreach ($rawdata as $booking) {
+			$date = $booking['date'];
+			$place = $booking['place'];
+			$approved = ($booking['approved'] ? 'approved' : 'unapproved');
+			$data[$date][$place][$approved][] = $booking;
 		}
 		
-		# Convert the date
-		foreach ($rawdata as $key => $value) {
-			list ($day, $month, $year) = explode ('/', trim ($key), 3);
-			$date = $year . $month . $day;
-			$data[$date] = $value;
-		}
-		
-		# Sort the data
-		ksort ($data);
+		// application::dumpData ($data);
 		
 		# Return the data
 		return $data;
 	}
 	
 	
-	# Function to show the listing
+	# Home/listing page
 	public function home ()
 	{
 		# Start the HTML
-		$html = '';
+		$html  = $this->settings['introductoryTextHtml'];
 		
-		# Introductory text
-		$html .= $this->settings['introductoryTextHtml'];
-		
-		# Start the table of dates
-		$html  .= "\n" . '<table class="lines sprilibrarybookings">';
-		$html .= "\n\t<tr>";
-		$html .= "\n\t\t<th class=\"date\">Date</th>";
-		$html .= "\n\t\t<th>Desk 1<br />Morning</th>";
-		$html .= "\n\t\t<th>Desk 2<br />Morning</th>";
-		$html .= "\n\t\t<th>Desk 1<br />Afternoon</th>";
-		$html .= "\n\t\t<th>Desk 2<br />Afternoon</th>";
-		$html .= "\n\t</tr>";
-		
-		# Loop through the data
-		foreach ($this->dates as $date) {
-			
-			# Prepare to look up what has been booked
-			$key = str_replace ('-', '', $date);
-			
-			# Get the formatted date
-			$dateFormatted = timedate::convertBackwardsDateToText ($date);
-			
-			# Add the date, signalling the start of the week when that occurs
-			$html .= "\n\t<tr" . ((substr ($dateFormatted, 0, 6) == 'Monday') ? ' class="newweek"' : '') . '>';
-			$html .= "\n\t\t<td class=\"date\">" . $dateFormatted . '</td>';
-			
-			# Add the bookings
-			foreach ($this->settings['placeTitles'] as $fieldName) {
-				
-				# Determine whether the field is booked
-				$isBooked = (isSet ($this->data[$key][$fieldName]) ? ($this->data[$key][$fieldName] ? true : false) : false);
-				$isMorning = (($fieldName == 'Morning1') || ($fieldName == 'Morning2'));
-				
-				# Determine whether the institution is closed this day and override further processing if so
-				if ($isClosed = ($isBooked && (strtolower (trim ($this->data[$key][$fieldName])) == 'closed'))) {
-					$html .= "\n\t\t" . '<td colspan="4" class="closed">&mdash; Closed this day &mdash;</td>';
-					break;
-				}
-				
-				# Create the HTML
-				$html .= "\n\t\t<td" . ($isBooked ? ' class="booked"' : '') . '>' . ($isBooked ? 'Booked' : "<a rel=\"nofollow\" href=\"{$this->baseUrl}/request/{$key}/" . ($isMorning ? 'morning' : 'afternoon') . '/">Available</a>') . '</td>';
-			}
-			
-			# Finish the row
-			$html .= "\n\t</tr>";
+		# Button and introduction for admins
+		if ($this->userIsAdministrator) {
+			$html .= "\n" . '<p class="actions right"><a href="' . $this->baseUrl . '/edit.html"><img src="/images/icons/pencil.png" alt=""> Edit</a></p>';
+			$html .= "\n" . '<p><img src="/images/icons/asterisk_yellow.png" alt="Info" class="icon" /> As an Administrator, you can hover the mouse over any booked slot to see details.</p>';
 		}
 		
-		# Complete the HTML
-		$html .= "\n" . '</table>';
+		# Show the table
+		$html .= $this->listingTable ();
 		
 		# Show the HTML
 		echo $html;
 	}
+	
+	
+	# Editing page
+	public function edit ()
+	{
+		# Start the HTML
+		$html  = '';
+		
+		# Button to return to viewing
+		$html .= "\n" . '<p class="actions right"><a href="' . $this->baseUrl . '/"><img src="/images/icons/cross.png" alt=""> Cancel editing</a></p>';
+		
+		# Assemble the listing template
+		$listingTableTemplate = $this->listingTable ($editMode = true, $formElements);
+		
+		# Create a form
+		$form = new form (array (
+			'display'		=> 'template',
+			'displayTemplate' => '{[[PROBLEMS]]}<p>{[[SUBMIT]]}</p>' . $listingTableTemplate . '<p>{[[SUBMIT]]}</p>',
+			'unsavedDataProtection' => true,
+			'reappear' => true,
+			'formCompleteText' => false,
+		));
+		foreach ($formElements as $fieldname => $default) {
+			$form->input (array (
+				'name'	=> $fieldname,
+				'title'	=> 'Status',
+				'required' => false,
+				'default' => $default,
+				'size' => 23,
+			));
+		}
+		if ($result = $form->process ($html)) {
+			
+			# Determine the changed fields, for efficiency
+			$changedFields = application::array_changed_values_fields ($formElements, $result);
+			if ($changedFields) {
+				
+				# Insert/update the changes
+				foreach ($changedFields as $field) {
+					
+					# Determine the match for existing data, and set what the new record should become
+					list ($date, $place) = explode ('_', $field, 2);
+					$where = array (
+						'date' => $date,
+						'place' => $place,
+						'approved' => '1',
+					);
+					$data = $where;	// Clone
+					$data['reservation'] = $result[$field];
+					
+					# Insert/update the changes, or delete the record if no text
+					$existingRecord = $this->databaseConnection->selectOne ($this->settings['database'], $this->settings['table'], $where);
+					if ($existingRecord) {
+						if (empty ($data['reservation'])) {
+							$this->databaseConnection->delete ($this->settings['database'], $this->settings['table'], array ('id' => $existingRecord['id']));
+						} else {
+							$this->databaseConnection->update ($this->settings['database'], $this->settings['table'], $data, array ('id' => $existingRecord['id']));
+						}
+					} else {
+						$this->databaseConnection->insert ($this->settings['database'], $this->settings['table'], $data, false);
+					}
+				}
+				
+				# Insert confirmation into the start of the page
+				$confirmationHtml = "\n<div class=\"graybox\">\n\t<p class=\"success\"><img src=\"/images/icons/tick.png\" alt=\"Tick\" class=\"icon\" /> <strong>The " . (count ($changedFields) == 1 ? 'change has' : 'changes have') . " now been made, as shown below. <a href=\"{$this->baseUrl}/\">Return to public listing</a></strong> or edit further below.</p>\n</div>";
+				$highlightIds = array ();
+				foreach ($changedFields as $field) {
+					$highlightIds[] = '#form_' . $field;
+				}
+				$cssHtml = "\n" . '<style type="text/css">' . implode (', ', $highlightIds) . ' {border: 2px solid green; background-color: #e0eedf;}</style>';
+				$html = $cssHtml . $confirmationHtml . $html;
+			}
+		}
+		
+		# Show the HTML
+		echo $html;
+	}
+	
+	
+	# Function to generate the listing table
+	public function listingTable ($editMode = false, &$formElements = array ())
+	{
+		# Assemble the data for a table, looping through the dates, so that all are shown, irrespective of whether a booking is present
+		$table = array ();
+		foreach ($this->dates as $date) {
+			
+			# Set the key for this row, which will be used as the class for this row
+			$key = 'week-' . $date;
+			
+			# Determine if this is Monday
+			$isMonday = date ('N', strtotime ($date)) == '1';
+			if ($isMonday) {$key .= ' newweek';}
+			
+			# If this is the first private date, add an extra class
+			if ($date == $this->firstPrivateDate) {
+				$table['firstprivatedate'] = array ('date' => 'Dates from here are not yet public');
+				foreach ($this->settings['placeTitles'] as $place => $label) {
+					$table['firstprivatedate'][$place] = '';
+				}
+			}
+			
+			# Get the formatted date and set this as the first column
+			$table[$key]['date'] = date ('l, jS F Y', strtotime ($date));
+			
+			# Determine whether the institution is closed this day
+			$firstPlace = 1;
+			$isClosedToday = (isSet ($this->data[$date]) && isSet ($this->data[$date][$firstPlace]) && isSet ($this->data[$date][$firstPlace]['approved']) && isSet ($this->data[$date][$firstPlace]['approved'][0]) && (strtolower (trim ($this->data[$date][$firstPlace]['approved'][0]['reservation'])) == 'closed'));
+			
+			# Determine the data for each place
+			foreach ($this->settings['placeTitles'] as $place => $label) {
+				
+				# If closed, state this
+				if ($isClosedToday && !$editMode) {
+					$table[$key][$place] = '<span class="booked">Closed this day</span>';
+				} else {
+					$isBooked = (isSet ($this->data[$date]) && isSet ($this->data[$date][$place]) && isSet ($this->data[$date][$place]['approved']) && isSet ($this->data[$date][$place]['approved'][0]));
+					$urlMoniker = str_replace ('-', '', $date);
+					$isMorning = (substr_count (strtolower ($label), 'morning'));
+					$bookedFor = ($this->userIsAdministrator && $isBooked ? ' title="' . htmlspecialchars ($this->data[$date][$place]['approved'][0]['reservation']) . '"' : '');
+					$linkStart = "<a rel=\"nofollow\" href=\"{$this->baseUrl}/request/{$urlMoniker}/" . ($isMorning ? 'morning' : 'afternoon') . '/">';
+					if ($editMode) {
+						$fieldname = $date . '_' . $place;
+						$formElements[$fieldname] = ($isBooked ? $this->data[$date][$place]['approved'][0]['reservation'] : '');
+						$table[$key][$place] = '{' . $fieldname . '}';
+					} else {
+						$table[$key][$place] = (($this->userIsAdministrator || !$isBooked) ? $linkStart : '') . ($isBooked ? "<span class=\"booked\"{$bookedFor}>Booked</span>" : "{$linkStart}Available") . (($this->userIsAdministrator || !$isBooked) ? '</a>' : '');
+					}
+				}
+			}
+		}
+		
+		# Compile as HTML
+		$html = application::htmlTable ($table, $this->settings['placeTitles'], 'lines bookingslist', $keyAsFirstColumn = false, $uppercaseHeadings = true, $allowHtml = true, $showColons = true, false, $addRowKeyClasses = true);
+		
+		# Return the HTML
+		return $html;
+	}
+	
 	
 	
 	# Function to provide a request form
@@ -220,6 +340,7 @@ $this->settings['placeTitles'] = array (
 			'formCompleteText' => false,
 			'antispam' => true,
 			'div' => 'lines horizontalonly bookingform',
+			'autofocus' => true,
 		));
 		
 		# Determine the form fields
@@ -229,50 +350,50 @@ $this->settings['placeTitles'] = array (
 		
 		$form->input (array (
 			'name'			=> 'name',
-			'title'					=> 'Your name',
-			'required'				=> true,
+			'title'			=> 'Your name',
+			'required'		=> true,
 		));
 		$form->input (array (
 			'name'			=> 'institution',
-			'title'					=> 'Your institution',
+			'title'			=> 'Your institution',
 			'description'	=> 'Please state the academic institution from which you are applying.',
-			'required'				=> true,
+			'required'		=> true,
 		));
 		$form->textarea (array (
 			'name'			=> 'documents',
-			'title'					=> 'Which documents do you wish to see?',
-			'required'				=> true,
-			'cols'				=> 40,
+			'title'			=> 'Which documents do you wish to see?',
+			'required'		=> true,
+			'cols'			=> 40,
 		));
 		$form->email (array (
 			'name'			=> 'email',
-			'title'					=> 'E-mail address',
+			'title'			=> 'E-mail address',
 			'description'	=> 'Correspondence by e-mail is preferred where possible.',
-			'required'				=> false,
+			'required'		=> false,
 		));
 		$form->textarea (array (
 			'name'			=> 'address',
-			'title'					=> 'Your address',
-			'required'				=> true,
-			'cols'				=> 40,
-			'rows'				=> 3,
+			'title'			=> 'Your address',
+			'required'		=> true,
+			'cols'			=> 40,
+			'rows'			=> 3,
 		));
 		$form->input (array (
 			'name'			=> 'phone',
-			'title'					=> 'Phone number',
-			'required'				=> false,
+			'title'			=> 'Phone number',
+			'required'		=> false,
 		));
 		$form->input (array (
 			'name'			=> 'arrivaltime',
-			'title'					=> 'Arrival time on first day',
-			'required'				=> true,
+			'title'			=> 'Arrival time on first day',
+			'required'		=> true,
 		));
 		$form->textarea (array (
 			'name'			=> 'subsequentdays',
-			'title'					=> 'Any subsequent (single/half-) days?',
+			'title'			=> 'Any subsequent (single/half-) days?',
 			'description'	=> "If you need to stay for more than just the {$period} of {$dateString}, please give full details here. You must specify specific single days or half-days only. Block bookings will not be accepted.",
-			'required'				=> false,
-			'rows'				=> 3,
+			'required'		=> false,
+			'rows'			=> 3,
 		));
 		
 		# E-mail the result to the webmaster as a backup record
