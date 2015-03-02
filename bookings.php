@@ -31,7 +31,6 @@ class bookings extends frontControllerApplication
 			'recipient'	=> NULL,	// Who to send the e-mail requests to
 			'form' => true,
 			'div' => 'bookings',
-			'tablePrefix' => false,
 			'formDiv' => 'lines ultimateform horizontalonly bookingform',
 			'formValidationCallback' => false,
 		);
@@ -112,7 +111,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Set the requests table
-		$this->settings['requestsTable'] = $this->settings['tablePrefix'] . 'requests';
+		$this->settings['requestsTable'] = 'requests';
 		
 		# Get the dates
 		$this->dates = $this->getDates ();
@@ -708,16 +707,15 @@ class bookings extends frontControllerApplication
 		
 		# Standard attributes
 		$attributes['date'] = array ('picker' => true, );
-		
-		switch ($this->settings['tablePrefix'] . 'requests') {
-			case 'archives_requests':
+		switch ($this->settings['database']) {
+			case 'bookings_archives':
 				$attributes['email'] = array ('description'	=> 'Correspondence by e-mail is preferred where possible.', );
 				if ($place && $date) {
 					$attributes['subsequentdays'] = array ('description'	=> "If you need to stay for more than just the date and slot shown, please give full details here. You must specify specific single days or half-days only. Block bookings will not be accepted.", );
 				}
 				break;
 				
-			case 'education_requests':
+			case 'bookings_education':
 				$attributes['visitType'] = array ('heading' => array (3 => 'Type of visit'), 'type' => 'radiobuttons', 'values' => array (
 					'Polar Museum visit'	=> 'Museum visit - self-guided (run entirely by the teacher or group leader)',
 					'Polar Museum workshop'	=> 'Museum workshop (run by a member of museum staff); Thursdays/Fridays only',
@@ -754,7 +752,7 @@ class bookings extends frontControllerApplication
 		);
 		
 		# Delegate to the standard function for editing
-		echo $this->editingTable ($this->settings['tablePrefix'] . __FUNCTION__, $dataBindingAttributes, 'ultimateform bookingform', $this->action, $sinenomineExtraSettings);
+		echo $this->editingTable (__FUNCTION__, $dataBindingAttributes, 'ultimateform bookingform', $this->action, $sinenomineExtraSettings);
 	}
 	
 	

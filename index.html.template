@@ -9,7 +9,6 @@ $settings = array (
 	'hostname' => 'localhost',
 	'database' => 'bookings',
 	'password' => 'databasepasswordhere',
-	'tablePrefix' => 'bookings_',
 	'serverAdministrator' => 'webmaster@example.com',
 	'recipient' => 'groupvisits@example.com',				// Who to send the e-mail requests to
 	'feedbackRecipient' => 'groupvisits@example.com',	// General feedback form recipient
