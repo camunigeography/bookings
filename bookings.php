@@ -1,5 +1,11 @@
 <?php
 
+#!# Add multi-day listing integration which fills in extra dates automatically (e.g. <baseUrl>/requests/10/edit.html )
+#!# Integrated e-mailing when editing records - would need sinenomine support
+#!# Stats system needed to compile booking stats automatically
+
+
+
 # Class to provide a system for booking availability slots
 require_once ('frontControllerApplication.php');
 class bookings extends frontControllerApplication
@@ -26,6 +32,7 @@ class bookings extends frontControllerApplication
 			'form' => true,
 			'div' => 'bookings',
 			'tablePrefix' => false,
+			'formDiv' => 'lines ultimateform horizontalonly bookingform',
 		);
 		
 		# Return the defaults
@@ -45,16 +52,36 @@ class bookings extends frontControllerApplication
 				'icon' => 'clock',
 			),
 			'edit' => array (
-				'description' => 'Booking requests - edit',
+				'description' => 'Confirmed bookings - edit',
 				'url' => 'edit.html',
-				'tab' => 'Edit',
+				'tab' => 'Edit/view bookings',
 				'administrator' => true,
 				'icon' => 'pencil',
 			),
 			'request' => array (
-				'description' => 'Make a booking request',
+				'description' => false,
 				'url' => 'request/%1/%2/',
 				'usetab' => 'home',
+			),
+			'requests' => array (
+				'description' => false,
+				'url' => 'requests/',
+				'tab' => 'Requests',
+				'administrator' => true,
+				'icon' => 'application_double',
+			),
+			'export' => array (
+				'description' => 'iCal feed - add listing to your calendar application',
+				'url' => 'export.html',
+				'administrator' => true,
+				'parent' => 'admin',
+				'subtab' => 'Export to calendar',
+			),
+			'ical' => array (
+				'description' => false,
+				'url' => 'bookings.ics',
+				'authentication' => false,	// Not ideal, but othewise Google Calendar can't see it
+				'export' => true,
 			),
 		);
 		
@@ -69,21 +96,25 @@ class bookings extends frontControllerApplication
 		# Load required libraries
 		require_once ('timedate.php');
 		
-		# Process the place titles
-		if ($this->action != 'settings') {
-			$placeTitles = $this->settings['placeTitles'];	// Cache the setting
-			$this->settings['placeTitles'] = array ();
-			foreach ($placeTitles as $index => $placeTitle) {
-				$place = $index + 1;	// Indexed from 1; the numeric value is what is stored, not the label
-				$this->settings['placeTitles'][$place] = trim ($placeTitle);
-			}
+		# Compile the place settings into an array
+		$this->places = array ();
+		foreach ($this->settings['places'] as $index => $moniker) {
+			list ($startTime, $untilTime) = explode (',', $this->settings['placeTimePeriods'][$index], 2);
+			$this->places[$moniker] = array (
+				'label'						=> $this->settings['placeLabels'][$index],
+				'labelAbbreviated'			=> $this->settings['placeLabelsAbbreviated'][$index],
+				'labelAbbreviatedLowercase'	=> strtolower ($this->settings['placeLabelsAbbreviated'][$index]),
+				'slots'						=> $this->settings['placeSlots'][$index],
+				'startTime'					=> $startTime,
+				'untilTime'					=> $untilTime,
+			);
 		}
+		
+		# Set the requests table
+		$this->settings['requestsTable'] = $this->settings['tablePrefix'] . 'requests';
 		
 		# Get the dates
 		$this->dates = $this->getDates ();
-		
-		# Get the data (which may be empty)
-		$this->data = $this->getData ();
 		
 	}
 	
@@ -105,9 +136,9 @@ class bookings extends frontControllerApplication
 	
 	
 	# Function to get the dates for future months
-	public function getDates ()
+	public function getDates ($fromToday = false)
 	{
-		# Determine the weekend days to use
+		# Determine the days to show
 		$weekdays = ($this->settings['weekdays'] ? explode (',', strtolower ($this->settings['weekdays'])) : array ());
 		
 		# Create an array of dates in future months
@@ -123,8 +154,10 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Remove earliest dates
-		for ($i = 0; $i < $this->settings['excludeNextDays']; $i++) {
-			array_shift ($dates);
+		if (!$fromToday) {
+			for ($i = 0; $i < $this->settings['excludeNextDays']; $i++) {
+				array_shift ($dates);
+			}
 		}
 		
 		# Return the dates
@@ -132,8 +165,35 @@ class bookings extends frontControllerApplication
 	}
 	
 	
+	# Function to determine if places are available
+	private function placesAvailable ($bookedSlotsData, $date, $place, &$errorMessageHtml)
+	{
+		# Define an error message
+		$errorMessageHtml = 'Sorry, there are no slots available for the ' . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . ' of ' . timedate::convertBackwardsDateToText ($date) . '.';
+		
+		# Not available if not a valid date
+		if (!in_array ($date, $this->dates)) {return false;}
+		
+		# Available if there are no current booked slots for this date
+		if (!isSet ($bookedSlotsData[$date])) {return true;}
+		
+		# Available if there are no current booked slots for this date and place
+		if (!isSet ($bookedSlotsData[$date][$place])) {return true;}
+		
+		# Available if there are no current booked slots for this date and place that are approved
+		if (!isSet ($bookedSlotsData[$date][$place]['approved'])) {return true;}
+		
+		# Check the number of slots available
+		$slotsMaximum = $this->places[$place]['slots'];
+		$slotsTaken = count ($bookedSlotsData[$date][$place]['approved']);
+		
+		# Return whether there are slots free
+		return ($slotsTaken < $slotsMaximum);
+	}
+	
+	
 	# Function to get the data
-	private function getData ()
+	private function getBookedSlotsData ()
 	{
 		# Determine the first and last dates, so that only this range is obtained for efficiency
 		$firstDate = $this->dates[0];
@@ -142,22 +202,72 @@ class bookings extends frontControllerApplication
 		
 		# Get any data for between these ranges
 		$query = "SELECT
-			*
+				id,date,place,slot,bookingFor,approved,1 AS reviewed,'manual' AS type
 			FROM {$this->settings['database']}.{$this->settings['table']}
+			WHERE
+				    `date` >= '{$firstDate}'
+				AND `date` <= '{$untilDate}'
+			ORDER BY `date`, place, slot
+		;";
+		$rawDataManual = $this->databaseConnection->getData ($query);
+		
+		# Add in actual bookings; slot '_' represents auto-allocation
+		$query = "SELECT
+				id,date,place,'_' AS slot,bookingFor,IF(approved='Approved',1,'') AS approved,IF(approved='Unreviewed','',1) AS reviewed,'request' AS type
+			FROM {$this->settings['database']}.{$this->settings['requestsTable']}
 			WHERE
 				    `date` >= '{$firstDate}'
 				AND `date` <= '{$untilDate}'
 			ORDER BY `date`, place
 		;";
-		$rawdata = $this->databaseConnection->getData ($query);
+		$rawDataRequests = $this->databaseConnection->getData ($query);
+		$rawDataRequests = $this->databaseConnection->splitSetToMultipleRecords ($rawDataRequests, 'place');
 		
-		# Regroup by date then place
+		# Merge
+		$bookings = array_merge ($rawDataManual, $rawDataRequests);
+		
+		# Regroup
 		$data = array ();
-		foreach ($rawdata as $booking) {
+		foreach ($bookings as $booking) {
 			$date = $booking['date'];
 			$place = $booking['place'];
-			$approved = ($booking['approved'] ? 'approved' : 'unapproved');
-			$data[$date][$place][$approved][] = $booking;
+			$slot = $booking['slot'];
+			$approvalStatus = ($booking['approved'] ? 'approved' : 'unapproved');
+			$data[$date][$place][$approvalStatus][$slot][] = $booking;
+		}
+		
+		# Assign auto-allocated slots
+		foreach ($data as $date => $bookingsByDate) {
+			foreach ($bookingsByDate as $place => $bookingsByPlace) {
+				foreach ($bookingsByPlace as $approvalStatus => $bookingsByApprovalStatus) {
+					
+					# Determine if there are any slots to be auto-allocated
+					if (isSet ($bookingsByApprovalStatus['_'])) {
+						
+						# Determine the free slot numbers; e.g. if four slots are defined for this type of place, and 1 is taken, the result would be array(0,2,3)
+						$availableSlots = array ();
+						for ($slot = 0; $slot < $this->places[$place]['slots']; $slot++) {
+							if (!isSet ($bookingsByApprovalStatus[$slot])) {
+								$availableSlots[] = $slot;
+							}
+						}
+						
+						# Loop through each booking needing to be auto-allocated, shifting it from _ to the real slot number
+						foreach ($bookingsByApprovalStatus['_'] as $index => $booking) {
+							if ($availableSlots) {
+								$nextAvailableSlot = array_shift ($availableSlots);		// i.e. take the first available slot from the stack of available slots
+								$data[$date][$place][$approvalStatus][$nextAvailableSlot][] = $booking;
+								unset ($data[$date][$place][$approvalStatus]['_'][$index]);
+							}
+						}
+						
+						# Remove empty auto-allocation containers
+						if (empty ($data[$date][$place][$approvalStatus]['_'])) {
+							unset ($data[$date][$place][$approvalStatus]['_']);
+						}
+					}
+				}
+			}
 		}
 		
 		// application::dumpData ($data);
@@ -187,7 +297,7 @@ class bookings extends frontControllerApplication
 	}
 	
 	
-	# Editing page
+	# Mass-editing page
 	public function edit ()
 	{
 		# Start the HTML
@@ -213,7 +323,7 @@ class bookings extends frontControllerApplication
 				'title'	=> 'Status',
 				'required' => false,
 				'default' => $default,
-				'size' => 23,
+				'size' => 22,
 			));
 		}
 		if ($result = $form->process ($html)) {
@@ -226,14 +336,15 @@ class bookings extends frontControllerApplication
 				foreach ($changedFields as $field) {
 					
 					# Determine the match for existing data, and set what the new record should become
-					list ($date, $place) = explode ('_', $field, 2);
+					list ($date, $place, $slot) = explode ('_', $field, 3);
 					$where = array (
 						'date' => $date,
 						'place' => $place,
+						'slot' => $slot,
 						'approved' => '1',
 					);
 					$data = $where;	// Clone
-					$data['reservation'] = $result[$field];
+					$data['bookingFor'] = $result[$field];
 					
 					# Insert/update the changes, or delete the record if no text
 					$existingRecord = $this->databaseConnection->selectOne ($this->settings['database'], $this->settings['table'], $where);
@@ -267,6 +378,23 @@ class bookings extends frontControllerApplication
 	# Function to generate the listing table
 	public function listingTable ($editMode = false, &$formElements = array ())
 	{
+		# In edit mode, reload the dates, but from the current date (rather than a week ahead)
+		if ($editMode) {
+			$this->dates = $this->getDates (true);
+		}
+		
+		# Get the booked slots data (which may be empty)
+		$bookedSlotsData = $this->getBookedSlotsData ();
+		
+//application::dumpData ($bookedSlotsData);
+		
+		# Determine the first day of the week in the settings
+		$weekdays = explode (',', strtolower ($this->settings['weekdays']));
+		$firstDayOfWeekInSettings = $weekdays[0];
+		
+		# Define the first slot
+		$firstPlace = array_shift (array_keys ($this->places));
+		
 		# Assemble the data for a table, looping through the dates, so that all are shown, irrespective of whether a booking is present
 		$table = array ();
 		foreach ($this->dates as $date) {
@@ -275,14 +403,17 @@ class bookings extends frontControllerApplication
 			$key = 'week-' . $date;
 			
 			# Determine if this is Monday
-			$isMonday = date ('N', strtotime ($date)) == '1';
-			if ($isMonday) {$key .= ' newweek';}
+			$isFirstDayOfWeek = strtolower (date ('l', strtotime ($date))) == $firstDayOfWeekInSettings;
+			if ($isFirstDayOfWeek) {$key .= ' newweek';}
 			
 			# If this is the first private date, add an extra class
 			if ($date == $this->firstPrivateDate) {
 				$table['firstprivatedate'] = array ('date' => 'Dates from here are not yet public');
-				foreach ($this->settings['placeTitles'] as $place => $label) {
-					$table['firstprivatedate'][$place] = '';
+				foreach ($this->places as $place => $placeAttributes) {
+					for ($slot = 0; $slot < $placeAttributes['slots']; $slot++) {
+						$column = $place . '_' . $slot;
+						$table['firstprivatedate'][$column] = '';
+					}
 				}
 			}
 			
@@ -290,39 +421,124 @@ class bookings extends frontControllerApplication
 			$table[$key]['date'] = date ('l, jS F Y', strtotime ($date));
 			
 			# Determine whether the institution is closed this day
-			$firstPlace = 1;
-			$isClosedToday = (isSet ($this->data[$date]) && isSet ($this->data[$date][$firstPlace]) && isSet ($this->data[$date][$firstPlace]['approved']) && isSet ($this->data[$date][$firstPlace]['approved'][0]) && (strtolower (trim ($this->data[$date][$firstPlace]['approved'][0]['reservation'])) == 'closed'));
+			$isClosedToday = $this->isClosedToday ($bookedSlotsData, $date);
 			
 			# Determine the data for each place
-			foreach ($this->settings['placeTitles'] as $place => $label) {
-				
-				# If closed, state this
-				if ($isClosedToday && !$editMode) {
-					$table[$key][$place] = '<span class="booked">Closed this day</span>';
-				} else {
-					$isBooked = (isSet ($this->data[$date]) && isSet ($this->data[$date][$place]) && isSet ($this->data[$date][$place]['approved']) && isSet ($this->data[$date][$place]['approved'][0]));
-					$urlMoniker = str_replace ('-', '', $date);
-					$isMorning = (substr_count (strtolower ($label), 'morning'));
-					$bookedFor = ($this->userIsAdministrator && $isBooked ? ' title="' . htmlspecialchars ($this->data[$date][$place]['approved'][0]['reservation']) . '"' : '');
-					$linkStart = "<a rel=\"nofollow\" href=\"{$this->baseUrl}/request/{$urlMoniker}/" . ($isMorning ? 'morning' : 'afternoon') . '/">';
-					if ($editMode) {
-						$fieldname = $date . '_' . $place;
-						$formElements[$fieldname] = ($isBooked ? $this->data[$date][$place]['approved'][0]['reservation'] : '');
-						$table[$key][$place] = '{' . $fieldname . '}';
-					} else {
-						$table[$key][$place] = (($this->userIsAdministrator || !$isBooked) ? $linkStart : '') . ($isBooked ? "<span class=\"booked\"{$bookedFor}>Booked</span>" : "{$linkStart}Available") . (($this->userIsAdministrator || !$isBooked) ? '</a>' : '');
+			foreach ($this->places as $place => $placeAttributes) {
+				for ($slot = 0; $slot < $placeAttributes['slots']; $slot++) {
+					$column = $place . '_' . $slot;
+					
+					# If closed, state this
+					if ($isClosedToday && !$editMode) {
+						$table[$key][$column] = '<span class="booked" title="closed">Closed this day</span>';
+						continue;	// Next slot/place
 					}
+					
+					# Is there a booking in this slot/place?
+					$isBooked = (isSet ($bookedSlotsData[$date]) && isSet ($bookedSlotsData[$date][$place]) && isSet ($bookedSlotsData[$date][$place]['approved']) && isSet ($bookedSlotsData[$date][$place]['approved'][$slot]) && isSet ($bookedSlotsData[$date][$place]['approved'][$slot][0]));
+					if ($isBooked) {
+						$booking = ($isBooked ? $bookedSlotsData[$date][$place]['approved'][$slot][0] : false);
+						
+						# Set the default cell value
+						$table[$key][$column] = '<span class="booked" title="' . htmlspecialchars ($booking['bookingFor']) . '">Booked</span>';
+						
+						# If the user is edit mode (and therefore an Administrator), instead give more details
+						if ($editMode) {
+							if ($booking['type'] == 'request') {	// Applied-for bookings
+								$linkUrl = "{$this->baseUrl}/requests/{$booking['id']}/edit.html";
+								$editLinkStart = "<a rel=\"nofollow\" href=\"{$linkUrl}\">";
+								$table[$key][$column] = '<span class="booked">Booked: ' . $editLinkStart . htmlspecialchars ($booking['bookingFor']) . '</a>' . '</span>';
+							} else {	// Manually-added slots
+								$fieldname = $date . '_' . $column;
+								$formElements[$fieldname] = $booking['bookingFor'];
+								$table[$key][$column] = '{' . $fieldname . '}' . $this->unreviewedEntries ($bookedSlotsData, $date, $place, $slot);
+							}
+						}
+						
+						continue;	// Next slot/place
+					}
+					
+					# Determine a link to add a request
+					$dateSlug = str_replace ('-', '', $date);
+					$linkUrl = "{$this->baseUrl}/request/{$dateSlug}/{$place}/";
+					
+					# The slot is therefore available; in edit mode, create a widget
+					if ($editMode) {
+						$fieldname = $date . '_' . $column;
+						$formElements[$fieldname] = '';
+						$table[$key][$column] = '{' . $fieldname . '}' . "<a class=\"add\" href=\"{$linkUrl}\">+</a>" . $this->unreviewedEntries ($bookedSlotsData, $date, $place, $slot);
+						continue;	// Next slot/place
+					}
+					
+					# For available slots in view mode, create a link
+					$table[$key][$column] = "<a rel=\"nofollow\" href=\"{$linkUrl}\">Available</a>";
 				}
 			}
 		}
 		
+		# Determine the headings
+		$placeTitles = array ();
+		foreach ($this->places as $place => $placeAttributes) {
+			for ($slot = 0; $slot < $placeAttributes['slots']; $slot++) {
+				$column = $place . '_' . $slot;
+				$placeTitles[$column] = $placeAttributes['labelAbbreviated'] . ($placeAttributes['slots'] == 1 ? '' : ' (slot&nbsp;' . ($slot + 1) . ')');	// Show slots starting with 1, though they are stored as zero-indexed (0,1,...)
+			}
+		}
+		
 		# Compile as HTML
-		$html = application::htmlTable ($table, $this->settings['placeTitles'], 'lines bookingslist', $keyAsFirstColumn = false, $uppercaseHeadings = true, $allowHtml = true, $showColons = true, false, $addRowKeyClasses = true);
+		$html = application::htmlTable ($table, $placeTitles, 'lines bookingslist', $keyAsFirstColumn = false, $uppercaseHeadings = true, $allowHtml = true, $showColons = true, false, $addRowKeyClasses = true);
 		
 		# Return the HTML
 		return $html;
 	}
 	
+	
+	# Function to determine if the institution is closed today
+	public function isClosedToday ($bookings, $date)
+	{
+		# End if nothing this day
+		if (!isSet ($bookings[$date])) {return false;}
+		
+		# Traverse down the structure of bookings for this date
+		foreach ($bookings[$date] as $place => $bookingsByPlace) {
+			if (isSet ($bookingsByPlace['approved'])) {
+				foreach ($bookingsByPlace['approved'] as $slot => $bookingsBySlot) {
+					foreach ($bookingsBySlot as $index => $booking) {	// Should only be one, i.e. [0]
+						if ($booking['bookingFor'] == 'closed') {
+							return true;
+						}
+					}
+				}
+			}
+		}
+		
+		# No match - not closed
+		return false;
+	}
+	
+	
+	# Function to determine if there are unreviewed entries for a specified date/place/slot
+	public function unreviewedEntries ($bookings, $date, $place, $slot)
+	{
+		# Create an array of entries
+		$unreviewedEntries = array ();
+		if (isSet ($bookings[$date]) && isSet ($bookings[$date][$place]) && isSet ($bookings[$date][$place]['unapproved']) && isSet ($bookings[$date][$place]['unapproved'][$slot])) {
+			foreach ($bookings[$date][$place]['unapproved'][$slot] as $index => $booking) {
+				if (!$booking['reviewed']) {
+					$unreviewedEntries[] = "[<a href=\"{$this->baseUrl}/requests/{$booking['id']}/edit.html\">#{$booking['id']}</a>]";
+				}
+			}
+		}
+		
+		# Return false if none
+		if (!$unreviewedEntries) {return false;}
+		
+		# Compile the HTML
+		$html = '<span class="small comment"><br />Unreviewed: ' . implode (' ', $unreviewedEntries) . '</span>';
+		
+		# Return the HTML
+		return $html;
+	}
 	
 	
 	# Function to provide a request form
@@ -333,27 +549,53 @@ class bookings extends frontControllerApplication
 		
 		# Ensure a date is set
 		if (!isSet ($_GET['date'])) {
-			echo "<p class=\"warning\">You didn't specify a date.</p>";
+			echo "\n<p class=\"warning\">You didn't specify a date.</p>";
 			return false;
 		}
 		
 		# Ensure it is a valid date by adding the hyphens in then checking it is in the generated list of dates
-		list ($year, $month, $day) = sscanf ($_GET['date'], "%4s%2s%2s");
+		list ($year, $month, $day) = sscanf ($_GET['date'], '%4s%2s%2s');
 		$date = "{$year}-{$month}-{$day}";
 		if (!in_array ($date, $this->dates)) {
-			echo "<p class=\"warning\">The date you selected is not valid. Please select one from the list below:</p>";
+			echo "\n<p class=\"warning\">The date you selected is not valid. Please check the URL and try again.</p>";
 			return false;
 		}
 		
-		# Ensure a period is set
-		if (!isSet ($_GET['period'])) {
-			echo "<p class=\"warning\">You didn't specify a period.</p>";
+		# Ensure a place is specified
+		if (!isSet ($_GET['place'])) {
+			echo "\n<p class=\"warning\">You didn't specify a place.</p>";
 			return false;
 		}
-		$period = $_GET['period'];
 		
-		# Determine the date as a string
-		$dateString = timedate::convertBackwardsDateToText ($date);
+		# Ensure the specified place is valid
+		if (!array_key_exists ($_GET['place'], $this->places)) {
+			echo "\n<p class=\"warning\">The place you selected is not valid. Please check the URL and try again.</p>";
+			return false;
+		}
+		$place = $_GET['place'];
+		
+		# Get the booked slots data (which may be empty)
+		$bookedSlotsData = $this->getBookedSlotsData ();
+		
+		# Ensure there are places available for the specified date and place
+		if (!$this->placesAvailable ($bookedSlotsData, $date, $place, $errorMessageHtml)) {
+			echo "\n{$errorMessageHtml}";
+			return false;
+		}
+		
+		# Start the HTML
+		$html .= "\n<h2>Request a booking for: the <u>" . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . '</u> of <u>' . timedate::convertBackwardsDateToText ($date) . '</u>' . '</h2>';
+		
+		# Determine the e-mail introductory text, which will include the link to the record about to be written; sending the e-mail manually just after the database write is very messy
+		$currentHighestIdQuery = "SELECT MAX(id) AS currentHighestId FROM {$this->settings['database']}.{$this->settings['requestsTable']};";
+		$currentHighestId = $this->databaseConnection->getOneField ($currentHighestIdQuery, 'currentHighestId');
+		$predictedId = $currentHighestId + 1;
+		$emailIntroductoryText  = "A booking request has been made as follows.";
+		$emailIntroductoryText .= "\n\n\n" . str_repeat ('*', 76);
+		$emailIntroductoryText .= "\n\nYou should review this online at:";
+		$emailIntroductoryText .= "\n\n" . $_SERVER['_SITE_URL'] . $this->baseUrl . '/requests/' . $predictedId . '/edit.html';
+		$emailIntroductoryText .= "\n\n" . str_repeat ('*', 76);
+		$emailIntroductoryText .= "\n\n\n";
 		
 		# Start a form
 		$form = new form (array (
@@ -361,10 +603,12 @@ class bookings extends frontControllerApplication
 			'databaseConnection' => $this->databaseConnection,
 			'formCompleteText' => false,
 			'antispam' => true,
-			'div' => 'lines horizontalonly bookingform',
+			'div' => $this->settings['formDiv'],
 			'autofocus' => true,
 			'cols' => 40,
 			'nullText' => false,
+			'emailIntroductoryText' => $emailIntroductoryText,
+			'unsavedDataProtection' => true,
 		));
 		
 		# Determine the form fields
@@ -372,48 +616,29 @@ class bookings extends frontControllerApplication
 		if ($this->settings['bookingPageTextHtml']) {
 			$form->heading ('', $this->settings['bookingPageTextHtml']);
 		}
-		$form->heading (2, "Request a booking for: the <u>{$period}</u> of <u>{$dateString}</u>");
 		
-		# Set the table
-		$table = $this->settings['tablePrefix'] . 'requests';
-		
-		# Set the attributes
-		$attributes = array ();
-		switch ($table) {
-			case 'archives_requests':
-				$attributes['email'] = array ('description'	=> 'Correspondence by e-mail is preferred where possible.', );
-				$attributes['subsequentdays'] = array ('description'	=> "If you need to stay for more than just the {$period} of {$dateString}, please give full details here. You must specify specific single days or half-days only. Block bookings will not be accepted.", );
-				break;
-				
-			case 'education_requests':
-				$attributes['visitType'] = array ('heading' => array (3 => 'Type of visit'), 'type' => 'radiobuttons', 'values' => array (
-					'Polar Museum visit'	=> 'Museum visit - self-guided (run entirely by the teacher or group leader)',
-					'Polar Museum workshop'	=> 'Museum workshop (run by a member of museum staff); Thursdays/Fridays only',
-					'Polar Museum tour'		=> 'Museum tour (led by a member of museum staff) - costs £80',
-					'Polar Museum outreach'	=> 'Outreach - will attract a cost',
-					'Polar Museum'			=> 'Other (please give details)',
-				));
-				$attributes['institutionType'] = array ('heading' => array (3 => 'Details of group'), );
-				$attributes['date'] = array ('heading' => array (3 => 'Details of visit'), 'picker' => true, );
-				$attributes['previsit'] = array ('picker' => true, );
-				$attributes['country'] = array ('type' => 'select', 'values' => $this->getCountries (), );
-				break;
+		# Set internal fields to be excluded
+		$exclude = array ('internalVisitContent', 'internalVisitContentOther', 'internalPhoneCallLog');
+		if (!$this->userIsAdministrator) {
+			$exclude[] = 'approved';
 		}
 		
 		# Databind the form
 		$form->dataBinding (array (
 			'database' => $this->settings['database'],
-			'table' => $table,
+			'table' => $this->settings['requestsTable'],
 			'intelligence' => true,
-			'attributes' => $attributes,
-			'exclude' => array ('internalAgeGroups', 'internalVisitContent', 'internalVisitContentOther', 'internalPhoneCallLog'),
-			'data' => array ('date' => $date, 'period' => ucfirst ($period), ),
+			'attributes' => $this->formDataBindingAttributes ($place, $date),
+			'exclude' => $exclude,
+			'data' => array ('date' => $date, 'place' => $place, ),
 		));
 		
 		# Add constraints
-		if ($table == 'education_requests') {
-			if ($unfinalisedData = $form->getUnfinalisedData ()) {
-				
+		if ($unfinalisedData = $form->getUnfinalisedData ()) {
+			
+			# Checks for education table
+#!# Hard-coded
+			if ($this->settings['requestsTable'] == 'education_requests') {
 				# Require school details
 				$requireSchoolInfo = array ('School', 'Language school', 'Further Education (sixth form)');
 				if (in_array ($unfinalisedData['institutionType'], $requireSchoolInfo) && (!strlen ($unfinalisedData['adults']))) {
@@ -428,26 +653,45 @@ class bookings extends frontControllerApplication
 					$form->registerProblem ('visittypedetailsadded', 'You gave further details for the type of visit but selected a different option.', 'visitTypeOther');
 				}
 			}
+			
+			# Check the date(s) requested are valid
+			if ($unfinalisedData['date']) {
+				$requestedPlaces = array ();
+				foreach ($unfinalisedData['place'] as $place => $requested) {
+					if ($requested) {
+						if (!$this->placesAvailable ($bookedSlotsData, $unfinalisedData['date'], $place, $errorMessageHtml)) {
+							$form->registerProblem ("placesunavailable{$place}", $errorMessageHtml);
+						}
+					}
+				}
+			}
 		}
 		
 		# Data protection statement
 		$form->heading ('p', 'By submitting this form you are agreeing to this information being kept as a record of your visit.');
 		
-		# E-mail the result to the webmaster as a backup record
-		$subject = $this->settings['applicationName'] . " for {$dateString} in the {$period}";
-		if ($table == 'education_requests') {
+		# E-mail the result
+		$subject = $this->settings['applicationName'] . ' for ' . timedate::convertBackwardsDateToText (($unfinalisedData ? $unfinalisedData['date'] : $date)) . " in the {$this->places[$place]['labelAbbreviatedLowercase']}";
+		if ($this->settings['requestsTable'] == 'education_requests') {
 			$subject = "{name} - {visitType|compiled}";
 		}
 		$form->setOutputEmail ($this->settings['recipient'], $this->settings['serverAdministrator'], $subject, NULL, $replyToField = 'email');
 		
 		# Confirm what they submitted on screen
-		$form->setOutputScreen ();
+		// $form->setOutputScreen ();
 		
 		# Process the form
 		if ($result = $form->process ($html)) {
 			
 			# Save to the database
-			$this->databaseConnection->insert ($this->settings['database'], $table, $result);
+			$this->databaseConnection->insert ($this->settings['database'], $this->settings['requestsTable'], $result);
+			$id = $this->databaseConnection->getLatestId ();
+			
+			# Confirm success, wiping out any previously-generated HTML
+			$html  = "\n<h2>Request a booking</h2>";
+			$html .= "\n<div class=\"graybox\">";
+			$html .= "\n\t<p><strong>Thank you. Your request has been sent.</strong> We will get back to you shortly to confirm whether the slot you requested is available, and to make any further arrangements.</p>";
+			$html .= "\n</div>";
 		}
 		
 		# Show the HTML
@@ -455,264 +699,125 @@ class bookings extends frontControllerApplication
 	}
 	
 	
-	# Function to return a list of countries
-	private function getCountries ()
+	# Data binding attributes
+	private function formDataBindingAttributes ($place = false, $date = false)
 	{
-		# Return the list
-		return array (
-			'United Kingdom',
-			'Group of visitors from multiple countries',
-			'---',
-			'Afghanistan',
-			'Aland Islands',
-			'Albania',
-			'Algeria',
-			'American Samoa',
-			'Andorra',
-			'Angola',
-			'Anguilla',
-			'Antarctica',
-			'Antigua and Barbuda',
-			'Argentina',
-			'Armenia',
-			'Aruba',
-			'Australia',
-			'Austria',
-			'Azerbaijan',
-			'Bahamas',
-			'Bahrain',
-			'Bangladesh',
-			'Barbados',
-			'Belarus',
-			'Belgium',
-			'Belize',
-			'Benin',
-			'Bermuda',
-			'Bhutan',
-			'Bolivia, Plurinational State of',
-			'Bonaire, Saint Eustatius and Saba',
-			'Bosnia and Herzegovina',
-			'Botswana',
-			'Bouvet Island',
-			'Brazil',
-			'British Indian Ocean Territory',
-			'Brunei Darussalam',
-			'Bulgaria',
-			'Burkina Faso',
-			'Burundi',
-			'Cambodia',
-			'Cameroon',
-			'Canada',
-			'Cape Verde',
-			'Cayman Islands',
-			'Central African Republic',
-			'Chad',
-			'Chile',
-			'China',
-			'Christmas Island',
-			'Cocos (Keeling) Islands',
-			'Colombia',
-			'Comoros',
-			'Congo',
-			'Congo, The Democratic Republic of the',
-			'Cook Islands',
-			'Costa Rica',
-			"Cote d'Ivoire",
-			'Croatia',
-			'Cuba',
-			'Curacao',
-			'Cyprus',
-			'Czech Republic',
-			'Denmark',
-			'Djibouti',
-			'Dominica',
-			'Dominican Republic',
-			'Ecuador',
-			'Egypt',
-			'El Salvador',
-			'Equatorial Guinea',
-			'Eritrea',
-			'Estonia',
-			'Ethiopia',
-			'Falkland Islands (Malvinas)',
-			'Faroe Islands',
-			'Fiji',
-			'Finland',
-			'France',
-			'French Guiana',
-			'French Polynesia',
-			'French Southern Territories',
-			'Gabon',
-			'Gambia',
-			'Georgia',
-			'Germany',
-			'Ghana',
-			'Gibraltar',
-			'Greece',
-			'Greenland',
-			'Grenada',
-			'Guadeloupe',
-			'Guam',
-			'Guatemala',
-			'Guernsey',
-			'Guinea',
-			'Guinea-Bissau',
-			'Guyana',
-			'Haiti',
-			'Heard Island and McDonald Islands',
-			'Holy See (Vatican City State)',
-			'Honduras',
-			'Hong Kong',
-			'Hungary',
-			'Iceland',
-			'India',
-			'Indonesia',
-			'Iran, Islamic Republic of',
-			'Iraq',
-			'Ireland',
-			'Isle of Man',
-			'Israel',
-			'Italy',
-			'Jamaica',
-			'Japan',
-			'Jersey',
-			'Jordan',
-			'Kazakhstan',
-			'Kenya',
-			'Kiribati',
-			"Korea, Democratic People's Republic of",
-			'Korea, Republic of',
-			'Kuwait',
-			'Kyrgyzstan',
-			"Lao People's Democratic Republic",
-			'Latvia',
-			'Lebanon',
-			'Lesotho',
-			'Liberia',
-			'Libyan Arab Jamahiriya',
-			'Liechtenstein',
-			'Lithuania',
-			'Luxembourg',
-			'Macao',
-			'Macedonia, The Former Yugoslav Republic of',
-			'Madagascar',
-			'Malawi',
-			'Malaysia',
-			'Maldives',
-			'Mali',
-			'Malta',
-			'Marshall Islands',
-			'Martinique',
-			'Mauritania',
-			'Mauritius',
-			'Mayotte',
-			'Mexico',
-			'Micronesia, Federated States of',
-			'Moldova, Republic of',
-			'Monaco',
-			'Mongolia',
-			'Montenegro',
-			'Montserrat',
-			'Morocco',
-			'Mozambique',
-			'Myanmar',
-			'Namibia',
-			'Nauru',
-			'Nepal',
-			'Netherlands',
-			'New Caledonia',
-			'New Zealand',
-			'Nicaragua',
-			'Niger',
-			'Nigeria',
-			'Niue',
-			'Norfolk Island',
-			'Northern Mariana Islands',
-			'Norway',
-			'Occupied Palestinian Territory',
-			'Oman',
-			'Pakistan',
-			'Palau',
-			'Panama',
-			'Papua New Guinea',
-			'Paraguay',
-			'Peru',
-			'Philippines',
-			'Pitcairn',
-			'Poland',
-			'Portugal',
-			'Puerto Rico',
-			'Qatar',
-			'Reunion',
-			'Romania',
-			'Russian Federation',
-			'Rwanda',
-			'Saint Barthelemy',
-			'Saint Helena, Ascension and Tristan da Cunha',
-			'Saint Kitts and Nevis',
-			'Saint Lucia',
-			'Saint Martin (French part)',
-			'Saint Pierre and Miquelon',
-			'Saint Vincent and The Grenadines',
-			'Samoa',
-			'San Marino',
-			'Sao Tome and Principe',
-			'Saudi Arabia',
-			'Senegal',
-			'Serbia',
-			'Seychelles',
-			'Sierra Leone',
-			'Singapore',
-			'Sint Maarten (Dutch part)',
-			'Slovakia',
-			'Slovenia',
-			'Solomon Islands',
-			'Somalia',
-			'South Africa',
-			'South Georgia and the South Sandwich Islands',
-			'Spain',
-			'Sri Lanka',
-			'North Sudan',
-			'South Sudan',
-			'Suriname',
-			'Svalbard and Jan Mayen',
-			'Swaziland',
-			'Sweden',
-			'Switzerland',
-			'Syrian Arab Republic',
-			'Taiwan, Province of China',
-			'Tajikistan',
-			'Tanzania, United Republic of',
-			'Thailand',
-			'Timor-Leste',
-			'Togo',
-			'Tokelau',
-			'Tonga',
-			'Trinidad and Tobago',
-			'Tunisia',
-			'Turkey',
-			'Turkmenistan',
-			'Turks and Caicos Islands',
-			'Tuvalu',
-			'Uganda',
-			'Ukraine',
-			'United Arab Emirates',
-			'United Kingdom (UK)',
-			'United States of America (USA)',
-			'United States Minor Outlying Islands',
-			'Uruguay',
-			'Uzbekistan',
-			'Vanuatu',
-			'Venezuela, Bolivarian Republic of',
-			'Viet Nam',
-			'Virgin Islands, British',
-			'Virgin Islands, U.S.',
-			'Wallis and Futuna',
-			'Western Sahara',
-			'Yemen',
-			'Zambia',
-			'Zimbabwe',
+		# Start an array of attributes
+		$attributes = array ();
+		
+		# Prepare the places values
+		$places = array ();
+		foreach ($this->places as $placeMoniker => $placeAttributes) {
+			$places[$placeMoniker] = $placeAttributes['label'];
+		}
+		$attributes['place'] = array ('type' => 'checkboxes', 'values' => $places, 'output' => array ('processing' => 'special-setdatatype'), 'defaultPresplit' => true, 'separator' => ',' /* #!# Ideally wouldn't be required - see note in ultimateForm re defaultPresplit */);
+		
+		# Standard attributes
+		$attributes['date'] = array ('picker' => true, );
+		
+		switch ($this->settings['tablePrefix'] . 'requests') {
+			case 'archives_requests':
+				$attributes['email'] = array ('description'	=> 'Correspondence by e-mail is preferred where possible.', );
+				if ($place && $date) {
+					$attributes['subsequentdays'] = array ('description'	=> "If you need to stay for more than just the date and slot shown, please give full details here. You must specify specific single days or half-days only. Block bookings will not be accepted.", );
+				}
+				break;
+				
+			case 'education_requests':
+				$attributes['visitType'] = array ('heading' => array (3 => 'Type of visit'), 'type' => 'radiobuttons', 'values' => array (
+					'Polar Museum visit'	=> 'Museum visit - self-guided (run entirely by the teacher or group leader)',
+					'Polar Museum workshop'	=> 'Museum workshop (run by a member of museum staff); Thursdays/Fridays only',
+					'Polar Museum tour'		=> 'Museum tour (led by a member of museum staff) - costs £80',
+					'Polar Museum outreach'	=> 'Outreach - will attract a cost',
+					'Polar Museum'			=> 'Other (please give details)',
+				));
+				$attributes['institutionType'] = array ('heading' => array (3 => 'Details of group'), );
+				$attributes['date']['heading'] = array (3 => 'Details of visit');
+				$attributes['previsit'] = array ('picker' => true, );
+				$attributes['country'] = array ('type' => 'select', 'values' => form::getCountries (array ('United Kingdom', 'Group of visitors from multiple countries') ), );
+				$attributes['approved'] = array ('heading' => array (3 => 'Internal notes'), 'type' => 'radiobuttons', );
+				$attributes['internalPhoneCallLog'] = array ('rows' => 10, );
+				break;
+		}
+		
+		# Return the array
+		return $attributes;
+	}
+	
+	
+	# Admin editing section, substantially delegated to the sinenomine editing component
+	public function requests ()
+	{
+		# Get the databinding attributes
+		$dataBindingAttributes = $this->formDataBindingAttributes ();
+		
+		# Define extra settings
+		$sinenomineExtraSettings = array (
+			'formDiv' => $this->settings['formDiv'],
+			'successfulRecordRedirect' => true,
+			'headingLevel' => 2,
+			'int1ToCheckbox' => true,
 		);
+		
+		# Delegate to the standard function for editing
+		echo $this->editingTable ($this->settings['tablePrefix'] . __FUNCTION__, $dataBindingAttributes, 'ultimateform bookingform', $this->action, $sinenomineExtraSettings);
+	}
+	
+	
+	# Export page
+	public function export ()
+	{
+		# Define the location of the ICS file
+		$icsFile = $this->baseUrl . '/' . $this->actions['ical']['url'];
+		
+		# Delegate to iCal class
+		require_once ('ical.php');
+		$ical = new ical ();
+		$html = $ical->instructionsLink ($icsFile);
+		
+		# Show the HTML
+		echo $html;
+	}
+	
+	
+	# iCal export
+	public function ical ()
+	{
+		# Get the bookings data
+		$bookings = $this->databaseConnection->select ($this->settings['database'], $this->settings['requestsTable'], array ('approved' => 'Approved'), array (), true, $orderBy = '`date`,place');
+		
+		# Split records with multiple place slots (e.g. 'morning,afternoon') into multiple records
+		$bookings = $this->databaseConnection->splitSetToMultipleRecords ($bookings, 'place');
+		
+		# Compile the data
+		$literalNewline = '\n';	// ical needs to see \n as text, not newlines; see http://stackoverflow.com/questions/666929/encoding-newlines-in-ical-files
+		$events = array ();
+		foreach ($bookings as $id => $booking) {
+			$events[$id] = array (
+				'title' => "{$booking['visitType']}: {$booking['bookingFor']}",
+				'startTime' => strtotime ($booking['date'] . ' ' . $this->places[$booking['place']]['startTime']),
+				'untilTime' => strtotime ($booking['date'] . ' ' . $this->places[$booking['place']]['untilTime']),
+				'location' => $booking['visitType'],
+				'description' =>
+					"Name of organiser: {$booking['name']}" . $literalNewline .
+					"Phone number: {$booking['telephone']}" . $literalNewline .
+					"E-mail: {$booking['email']}" . $literalNewline .
+					$literalNewline .
+					"Number of participants: {$booking['participants']}" . $literalNewline .
+					"Age group(s): " . $literalNewline . ' - ' . str_replace (',', $literalNewline . ' - ', $booking['ageGroups']) . $literalNewline .
+					"Any other information/comments/requests: " . ($booking['comments'] ? $literalNewline . $booking['comments'] : '-') . $literalNewline .
+					$literalNewline .
+					"Visit content: " . ($booking['internalVisitContent'] ? $literalNewline . str_replace (',', ', ', $booking['internalVisitContent']) : '-') . $literalNewline .
+					"Visit detail: " . ($booking['internalVisitContentOther'] ? $literalNewline . $booking['internalVisitContentOther'] : '-') . $literalNewline .
+					$literalNewline .
+					"Edit this booking at:{$literalNewline}{$_SERVER['_SITE_URL']}{$this->baseUrl}/{$this->actions['requests']['url']}{$booking['id']}/edit.html",		// $booking['id'] is used rather than $id which is fictional due to split bookings
+			);
+		}
+		
+		# Delegate to iCal class
+		require_once ('ical.php');
+		$ical = new ical ();
+		echo $ical->create ($events, application::pluralise ($this->settings['applicationName']), 'ac.uk.cam.spri', $this->settings['applicationName']);
 	}
 }
 
