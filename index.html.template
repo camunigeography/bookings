@@ -10,8 +10,9 @@ $settings = array (
 	'database' => 'bookings',
 	'password' => 'databasepasswordhere',
 	'serverAdministrator' => 'webmaster@example.com',
-	'recipient' => 'groupvisits@example.com',				// Who to send the e-mail requests to
+	'recipient' => 'groupvisits@example.com',			// Who to send the e-mail requests to
 	'feedbackRecipient' => 'groupvisits@example.com',	// General feedback form recipient
+	'authLinkVisibility' => '.place.ac.uk.example.com',	// Hide login link outside computers on this domain
 	'formValidationCallback' => 'formValidationCallback',
 );
 
