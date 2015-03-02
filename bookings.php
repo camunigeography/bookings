@@ -110,9 +110,6 @@ class bookings extends frontControllerApplication
 			);
 		}
 		
-		# Set the requests table
-		$this->settings['requestsTable'] = 'requests';
-		
 		# Get the dates
 		$this->dates = $this->getDates ();
 		
@@ -214,7 +211,7 @@ class bookings extends frontControllerApplication
 		# Add in actual bookings; slot '_' represents auto-allocation
 		$query = "SELECT
 				id,date,place,'_' AS slot,bookingFor,IF(approved='Approved',1,'') AS approved,IF(approved='Unreviewed','',1) AS reviewed,'request' AS type
-			FROM {$this->settings['database']}.{$this->settings['requestsTable']}
+			FROM {$this->settings['database']}.requests
 			WHERE
 				    `date` >= '{$firstDate}'
 				AND `date` <= '{$untilDate}'
@@ -587,7 +584,7 @@ class bookings extends frontControllerApplication
 		$html .= "\n<h2>Request a booking for: the <u>" . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . '</u> of <u>' . timedate::convertBackwardsDateToText ($date) . '</u>' . '</h2>';
 		
 		# Determine the e-mail introductory text, which will include the link to the record about to be written; sending the e-mail manually just after the database write is very messy
-		$currentHighestIdQuery = "SELECT MAX(id) AS currentHighestId FROM {$this->settings['database']}.{$this->settings['requestsTable']};";
+		$currentHighestIdQuery = "SELECT MAX(id) AS currentHighestId FROM {$this->settings['database']}.requests;";
 		$currentHighestId = $this->databaseConnection->getOneField ($currentHighestIdQuery, 'currentHighestId');
 		$predictedId = $currentHighestId + 1;
 		$emailIntroductoryText  = "Thank you for your booking request. Please await confirmation before proceeding with your visit.";
@@ -626,7 +623,7 @@ class bookings extends frontControllerApplication
 		# Databind the form
 		$form->dataBinding (array (
 			'database' => $this->settings['database'],
-			'table' => $this->settings['requestsTable'],
+			'table' => 'requests',
 			'intelligence' => true,
 			'attributes' => $this->formDataBindingAttributes ($place, $date),
 			'exclude' => $exclude,
@@ -677,7 +674,7 @@ class bookings extends frontControllerApplication
 		if ($result = $form->process ($html)) {
 			
 			# Save to the database
-			$this->databaseConnection->insert ($this->settings['database'], $this->settings['requestsTable'], $result);
+			$this->databaseConnection->insert ($this->settings['database'], 'requests', $result);
 			$id = $this->databaseConnection->getLatestId ();
 			
 			# Confirm success, wiping out any previously-generated HTML
@@ -776,7 +773,7 @@ class bookings extends frontControllerApplication
 	public function ical ()
 	{
 		# Get the bookings data
-		$bookings = $this->databaseConnection->select ($this->settings['database'], $this->settings['requestsTable'], array ('approved' => 'Approved'), array (), true, $orderBy = '`date`,place');
+		$bookings = $this->databaseConnection->select ($this->settings['database'], 'requests', array ('approved' => 'Approved'), array (), true, $orderBy = '`date`,place');
 		
 		# Split records with multiple place slots (e.g. 'morning,afternoon') into multiple records
 		$bookings = $this->databaseConnection->splitSetToMultipleRecords ($bookings, 'place');
