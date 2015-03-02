@@ -678,6 +678,7 @@ class bookings extends frontControllerApplication
 			'nullText' => false,
 			'emailIntroductoryText' => $emailIntroductoryText,
 			'unsavedDataProtection' => true,
+			'picker' => true,
 		));
 		
 		# Determine the form fields
@@ -775,7 +776,6 @@ class bookings extends frontControllerApplication
 		$attributes['place'] = array ('type' => 'checkboxes', 'values' => $places, 'output' => array ('processing' => 'special-setdatatype'), 'defaultPresplit' => true, 'separator' => ',' /* #!# Ideally wouldn't be required - see note in ultimateForm re defaultPresplit */);
 		
 		# Standard attributes
-		$attributes['date'] = array ('picker' => true, );
 		switch ($this->settings['database']) {
 			case 'bookings_archives':
 				$attributes['email'] = array ('description'	=> 'Correspondence by e-mail is preferred where possible.', );
@@ -794,7 +794,6 @@ class bookings extends frontControllerApplication
 				));
 				$attributes['institutionType'] = array ('heading' => array (3 => 'Details of group'), );
 				$attributes['date']['heading'] = array (3 => 'Details of visit');
-				$attributes['previsit'] = array ('picker' => true, );
 				$attributes['country'] = array ('type' => 'select', 'values' => form::getCountries (array ('United Kingdom', 'Group of visitors from multiple countries') ), );
 				$attributes['approved'] = array ('heading' => array (3 => 'Internal notes'), 'type' => 'radiobuttons', );
 				$attributes['internalPhoneCallLog'] = array ('rows' => 10, );
@@ -818,6 +817,7 @@ class bookings extends frontControllerApplication
 			'successfulRecordRedirect' => true,
 			'headingLevel' => 2,
 			'int1ToCheckbox' => true,
+			'datePicker' => true,
 		);
 		
 		# Delegate to the standard function for editing
