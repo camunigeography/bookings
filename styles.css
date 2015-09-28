@@ -8,12 +8,13 @@
 #bookings table.bookingslist td {white-space: nowrap;}
 #bookings table.bookingslist td a.add {border-bottom: 0; color: #bbb;}
 #bookings table.bookingslist td.closed {color: #bbb; text-align: center;}
-#bookings .bookingform .description {font-style: italic; color: #555;}
+#bookings .bookingform table td.description {font-style: italic; color: #555; width: 10em; font-size: 0.9em;}
 #bookings .bookingform table td, #bookings .bookingform table th {border-bottom: 1px #eee solid; padding: 4px;}
 #bookings .bookingform table {border: 0; border-collapse: collapse; border-spacing: 0;}
 #bookings .bookingform th:first-child, #bookings .bookingform td:first-child {max-width: 250px; padding-right: 10px;}
 #bookings .bookingform tr.visitType td {border-bottom: none;}
-#bookings .bookingform tr.visitType input {margin-bottom: 8px;}
+#bookings .bookingform tr.visitType input {margin-bottom: 0; padding-bottom: 0;}
+#bookings .bookingform tr.visitType br {content: '.'; display: inline-block; width: 100%; font-size: 1px;} /* Hacky method to ensure visual separation; see: http://stackoverflow.com/questions/899252/can-you-target-br-with-css */
 #bookings .bookingform tr.visitTypeOther input {margin-left: 21px; position: relative; top: -12px;}
 #bookings .bookingform tr.visitTypeOther td {border-top: 0;}
 #bookings .bookingform tr.visitTypeOther td.title {color: white;}

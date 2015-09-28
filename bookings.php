@@ -786,7 +786,7 @@ class bookings extends frontControllerApplication
 			'description'	=> 'Correspondence by e-mail is preferred where possible.',
 		);
 		$attributes['subsequentdays'] = array (
-			'description'	=> "If you need to stay for more than just the date and slot shown, please give full details here. You must specify specific single days or half-days only. Block bookings will not be accepted.",
+			'description'	=> 'If you need to stay for more than just the date and slot shown, please give full details here. You must specify specific single days or half-days only. Block bookings will not be accepted.',
 		);
 		$attributes['visitType'] = array (
 			'heading' => array (3 => 'Type of visit'),
