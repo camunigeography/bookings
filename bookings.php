@@ -126,7 +126,7 @@ class bookings extends frontControllerApplication
 		--	  `postcode` varchar(9) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Postcode',
 		--	  `country` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Country',
 		--	  `telephone` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Phone number',
-			  `email` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'E-mail',
+			  `email` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'E-mail',
 		--	  `revisit` enum('','Yes','No') COLLATE utf8_unicode_ci NOT NULL COMMENT 'Have you visited before?',
 		--	  `heardof` enum('','Word of mouth','Visited before','Live locally','Newspaper','Other printed materials','Website','Twitter','Facebook','Other') COLLATE utf8_unicode_ci NOT NULL COMMENT 'How did you hear about us?',
 			  `date` date NOT NULL COMMENT 'Requested date',
@@ -782,9 +782,6 @@ class bookings extends frontControllerApplication
 		);
 		
 		# Attributes (which may or may not be present, depending on table structure)
-		$attributes['email'] = array (
-			'description'	=> 'Correspondence by e-mail is preferred where possible.',
-		);
 		$attributes['subsequentdays'] = array (
 			'description'	=> 'If you need to stay for more than just the date and slot shown, please give full details here. You must specify specific single days or half-days only. Block bookings will not be accepted.',
 		);
