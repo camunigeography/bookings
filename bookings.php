@@ -137,7 +137,7 @@ class bookings extends frontControllerApplication
 		--	  `adults` int(2) DEFAULT NULL COMMENT 'Number of accompanying adults (for groups of children under the age of 18)',
 		--	  `specialNeeds` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Any special needs?',
 		--	  `comments` text COLLATE utf8_unicode_ci COMMENT 'Any other information/comments/requests',
-			  `approved` enum('Unreviewed','Approved','Rejected') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Unreviewed' COMMENT 'Approved?',
+			  `approved` enum('Unreviewed','Approved','Rejected','Cancelled') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Unreviewed' COMMENT 'Approved?',
 		--	  `internalVisitContent` set('Some package','Another work package','Third option','Other') COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Visit content',
 		--	  `internalVisitContentOther` text COLLATE utf8_unicode_ci COMMENT 'Visit content (detail for other)',
 		--	  `internalPhoneCallLog` text COLLATE utf8_unicode_ci COMMENT 'Phone call log',
