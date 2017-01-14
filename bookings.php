@@ -156,7 +156,8 @@ class bookings extends frontControllerApplication
 			  `placeSlots` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Slots per place title',
 			  `placeTimePeriods` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place time periods (CSV)',
 			  `introductoryTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Introductory text',
-			  `bookingPageTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Booking page introductory text'
+			  `bookingPageTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Booking page introductory text',
+			  `awayMessage` VARCHAR(255) NULL COMMENT 'Away message' AFTER `bookingPageTextHtml`
 			) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Settings';
 		";
 	}
@@ -748,12 +749,14 @@ class bookings extends frontControllerApplication
 			
 			# Save to the database
 			$this->databaseConnection->insert ($this->settings['database'], 'requests', $result);
-			$id = $this->databaseConnection->getLatestId ();
 			
 			# Confirm success, wiping out any previously-generated HTML
 			$html  = "\n<h2>Request a booking</h2>";
 			$html .= "\n<div class=\"graybox\">";
 			$html .= "\n\t<p><strong>Thank you. Your request has been sent.</strong> We will get back to you shortly to confirm whether the slot you requested is available, and to make any further arrangements.</p>";
+			if ($this->settings['awayMessage']) {
+				$html .= "\n\t<p class=\"warning\">" . htmlspecialchars ($this->settings['awayMessage']) . '</p>';
+			}
 			$html .= "\n</div>";
 		}
 		
