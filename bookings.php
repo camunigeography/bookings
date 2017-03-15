@@ -155,6 +155,7 @@ class bookings extends frontControllerApplication
 			  `placeLabelsAbbreviated` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place labels (abbreviated)',
 			  `placeSlots` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Slots per place title',
 			  `placeTimePeriods` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place time periods (CSV)',
+			  `icalMonthsBack` INT(11) NULL DEFAULT NULL COMMENT 'How many months back should the iCal feed start from? (Leave blank to show everything.)',
 			  `introductoryTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Introductory text',
 			  `bookingPageTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Booking page introductory text',
 			  `awayMessage` VARCHAR(255) NULL COMMENT 'Away message' AFTER `bookingPageTextHtml`
@@ -861,7 +862,15 @@ class bookings extends frontControllerApplication
 	public function ical ()
 	{
 		# Get the bookings data
-		$bookings = $this->databaseConnection->select ($this->settings['database'], 'requests', array ('approved' => 'Approved'), array (), true, $orderBy = '`date`,place');
+		$query = "SELECT
+			*
+			FROM {$this->settings['database']}.requests
+			WHERE
+				approved = 'Approved'
+				" . (strlen ($this->settings['icalMonthsBack']) ? " AND `date` >= DATE_SUB(NOW(), INTERVAL {$this->settings['icalMonthsBack']} MONTH) " : '') . "
+			ORDER BY `date`,place
+		;";
+		$bookings = $this->databaseConnection->getData ($query, "{$this->settings['database']}.requests");
 		
 		# Split records with multiple place slots (e.g. 'morning,afternoon') into multiple records
 		$bookings = $this->databaseConnection->splitSetToMultipleRecords ($bookings, 'place');
