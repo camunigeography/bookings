@@ -208,6 +208,9 @@ class bookings extends frontControllerApplication
 	{
 		# Determine the days to show
 		$weekdays = ($this->settings['weekdays'] ? explode (',', strtolower ($this->settings['weekdays'])) : true);
+		if ($editMode) {
+			$weekdays = true;
+		}
 		
 		# Create an array of dates in future months
 		$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPublic'], 'Y-m-d', $weekdays);
@@ -221,7 +224,7 @@ class bookings extends frontControllerApplication
 			$this->firstPrivateDate = reset ($privateDatesValues);
 		}
 		
-		# Remove earliest dates
+		# Remove earliest dates in the public list
 		if (!$fromToday) {
 			for ($i = 0; $i < $this->settings['excludeNextDays']; $i++) {
 				array_shift ($dates);
