@@ -210,7 +210,7 @@ class bookings extends frontControllerApplication
 	public function getDates ($fromToday = false, $editMode = false)
 	{
 		# Determine the days to show
-		$weekdays = ($this->settings['weekdays'] ? explode (',', strtolower ($this->settings['weekdays'])) : array ());
+		$weekdays = ($this->settings['weekdays'] ? explode (',', strtolower ($this->settings['weekdays'])) : true);
 		
 		# Create an array of dates in future months
 		$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPublic'], 'Y-m-d', $weekdays);
