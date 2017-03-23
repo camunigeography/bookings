@@ -206,8 +206,8 @@ class bookings extends frontControllerApplication
 	}
 	
 	
-	# Function to get the dates for future months
-	public function getDates ($fromToday = false)
+	# Function to get the dates for future months; edit mode removes various restrictions
+	public function getDates ($fromToday = false, $editMode = false)
 	{
 		# Determine the days to show
 		$weekdays = ($this->settings['weekdays'] ? explode (',', strtolower ($this->settings['weekdays'])) : array ());
@@ -216,7 +216,7 @@ class bookings extends frontControllerApplication
 		$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPublic'], 'Y-m-d', $weekdays);
 		
 		# If the user is an admin, show the fuller list, and determine the first date that is private
-		if ($this->userIsAdministrator) {
+		if ($editMode) {
 			$datesPublic = $dates;
 			$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPrivate'], 'Y-m-d', $weekdays);
 			$privateDates = array_diff ($dates, $datesPublic);
@@ -451,7 +451,7 @@ class bookings extends frontControllerApplication
 	{
 		# In edit mode, reload the dates, but from the current date (rather than a week ahead)
 		if ($editMode) {
-			$this->dates = $this->getDates (true);
+			$this->dates = $this->getDates (true, $editMode);
 		}
 		
 		# Get the booked slots data (which may be empty)
