@@ -236,33 +236,6 @@ class bookings extends frontControllerApplication
 	}
 	
 	
-	# Function to determine if places are available
-	private function placesAvailable ($bookedSlotsData, $date, $place, &$errorMessageHtml)
-	{
-		# Define an error message
-		$errorMessageHtml = 'Sorry, there are no slots available for the ' . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . ' of ' . timedate::convertBackwardsDateToText ($date) . '.';
-		
-		# Not available if not a valid date
-		if (!in_array ($date, $this->dates)) {return false;}
-		
-		# Available if there are no current booked slots for this date
-		if (!isSet ($bookedSlotsData[$date])) {return true;}
-		
-		# Available if there are no current booked slots for this date and place
-		if (!isSet ($bookedSlotsData[$date][$place])) {return true;}
-		
-		# Available if there are no current booked slots for this date and place that are approved
-		if (!isSet ($bookedSlotsData[$date][$place]['approved'])) {return true;}
-		
-		# Check the number of slots available
-		$slotsMaximum = $this->places[$place]['slots'];
-		$slotsTaken = count ($bookedSlotsData[$date][$place]['approved']);
-		
-		# Return whether there are slots free
-		return ($slotsTaken < $slotsMaximum);
-	}
-	
-	
 	# Function to get the data
 	private function getBookedSlotsData ()
 	{
@@ -763,6 +736,33 @@ class bookings extends frontControllerApplication
 		
 		# Show the HTML
 		echo $html;
+	}
+	
+	
+	# Function to determine if places are available
+	private function placesAvailable ($bookedSlotsData, $date, $place, &$errorMessageHtml)
+	{
+		# Define an error message
+		$errorMessageHtml = 'Sorry, there are no slots available for the ' . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . ' of ' . timedate::convertBackwardsDateToText ($date) . '.';
+		
+		# Not available if not a valid date
+		if (!in_array ($date, $this->dates)) {return false;}
+		
+		# Available if there are no current booked slots for this date
+		if (!isSet ($bookedSlotsData[$date])) {return true;}
+		
+		# Available if there are no current booked slots for this date and place
+		if (!isSet ($bookedSlotsData[$date][$place])) {return true;}
+		
+		# Available if there are no current booked slots for this date and place that are approved
+		if (!isSet ($bookedSlotsData[$date][$place]['approved'])) {return true;}
+		
+		# Check the number of slots available
+		$slotsMaximum = $this->places[$place]['slots'];
+		$slotsTaken = count ($bookedSlotsData[$date][$place]['approved']);
+		
+		# Return whether there are slots free
+		return ($slotsTaken < $slotsMaximum);
 	}
 	
 	
