@@ -184,9 +184,6 @@ class bookings extends frontControllerApplication
 			);
 		}
 		
-		# Get the dates
-		$this->dates = $this->getDates ();
-		
 	}
 	
 	
@@ -237,11 +234,11 @@ class bookings extends frontControllerApplication
 	
 	
 	# Function to get the data
-	private function getBookedSlotsData ()
+	private function getBookedSlotsData ($dates)
 	{
 		# Determine the first and last dates, so that only this range is obtained for efficiency
-		$firstDate = $this->dates[0];
-		$datesValues = array_values ($this->dates);	// This temp has to be used to avoid "Strict Standards: Only variables should be passed by reference"
+		$firstDate = $dates[0];
+		$datesValues = array_values ($dates);	// This temp has to be used to avoid "Strict Standards: Only variables should be passed by reference"
 		$untilDate = end ($datesValues);
 		
 		# Get any data for between these ranges
@@ -422,13 +419,15 @@ class bookings extends frontControllerApplication
 	# Function to generate the listing table
 	public function listingTable ($editMode = false, &$formElements = array ())
 	{
-		# In edit mode, reload the dates, but from the current date (rather than a week ahead)
+		# Get the dates; in edit mode, reload the dates, but from the current date (rather than a week ahead)
 		if ($editMode) {
-			$this->dates = $this->getDates (true, $editMode);
+			$dates = $this->getDates (true, $editMode);
+		} else {
+			$dates = $this->getDates ();
 		}
 		
 		# Get the booked slots data (which may be empty)
-		$bookedSlotsData = $this->getBookedSlotsData ();
+		$bookedSlotsData = $this->getBookedSlotsData ($dates);
 		
 //application::dumpData ($bookedSlotsData);
 		
@@ -441,7 +440,7 @@ class bookings extends frontControllerApplication
 		
 		# Assemble the data for a table, looping through the dates, so that all are shown, irrespective of whether a booking is present
 		$table = array ();
-		foreach ($this->dates as $date) {
+		foreach ($dates as $date) {
 			
 			# Set the key for this row, which will be used as the class for this row
 			$key = 'week-' . $date;
@@ -597,10 +596,13 @@ class bookings extends frontControllerApplication
 			return false;
 		}
 		
+		# Get the dates
+		$dates = $this->getDates ();
+		
 		# Ensure it is a valid date by adding the hyphens in then checking it is in the generated list of dates
 		list ($year, $month, $day) = sscanf ($_GET['date'], '%4s%2s%2s');
 		$date = "{$year}-{$month}-{$day}";
-		if (!in_array ($date, $this->dates)) {
+		if (!in_array ($date, $dates)) {
 			echo "\n<p class=\"warning\">The date you selected is not valid. Please check the URL and try again.</p>";
 			return false;
 		}
@@ -619,10 +621,10 @@ class bookings extends frontControllerApplication
 		$place = $_GET['place'];
 		
 		# Get the booked slots data (which may be empty)
-		$bookedSlotsData = $this->getBookedSlotsData ();
+		$bookedSlotsData = $this->getBookedSlotsData ($dates);
 		
 		# Ensure there are places available for the specified date and place
-		if (!$this->placesAvailable ($bookedSlotsData, $date, $place, $errorMessageHtml)) {
+		if (!$this->placesAvailable ($dates, $bookedSlotsData, $date, $place, $errorMessageHtml)) {
 			echo "\n{$errorMessageHtml}";
 			return false;
 		}
@@ -696,7 +698,7 @@ class bookings extends frontControllerApplication
 				$requestedPlaces = array ();
 				foreach ($unfinalisedData['place'] as $place => $requested) {
 					if ($requested) {
-						if (!$this->placesAvailable ($bookedSlotsData, $unfinalisedData['date'], $place, $errorMessageHtml)) {
+						if (!$this->placesAvailable ($dates, $bookedSlotsData, $unfinalisedData['date'], $place, $errorMessageHtml)) {
 							$form->registerProblem ("placesunavailable{$place}", $errorMessageHtml);
 						}
 					}
@@ -740,13 +742,13 @@ class bookings extends frontControllerApplication
 	
 	
 	# Function to determine if places are available
-	private function placesAvailable ($bookedSlotsData, $date, $place, &$errorMessageHtml)
+	private function placesAvailable ($dates, $bookedSlotsData, $date, $place, &$errorMessageHtml)
 	{
 		# Define an error message
 		$errorMessageHtml = 'Sorry, there are no slots available for the ' . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . ' of ' . timedate::convertBackwardsDateToText ($date) . '.';
 		
 		# Not available if not a valid date
-		if (!in_array ($date, $this->dates)) {return false;}
+		if (!in_array ($date, $dates)) {return false;}
 		
 		# Available if there are no current booked slots for this date
 		if (!isSet ($bookedSlotsData[$date])) {return true;}
