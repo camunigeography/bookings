@@ -599,8 +599,12 @@ class bookings extends frontControllerApplication
 			return false;
 		}
 		
-		# Get the dates
-		$dates = $this->getDates ();
+		# Get the dates; admins can access all dates
+		if ($this->userIsAdministrator) {
+			$dates = $this->getDates (true, true);
+		} else {
+			$dates = $this->getDates ();
+		}
 		
 		# Ensure it is a valid date by adding the hyphens in then checking it is in the generated list of dates
 		list ($year, $month, $day) = sscanf ($_GET['date'], '%4s%2s%2s');
