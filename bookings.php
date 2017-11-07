@@ -102,7 +102,7 @@ class bookings extends frontControllerApplication
 			) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='System administrators';
 			
 			CREATE TABLE IF NOT EXISTS `bookings` (
-			  `id` int(11) NOT NULL COMMENT 'Automatic key' PRIMARY KEY,
+			  `id` int(11) NOT NULL COMMENT 'Automatic key' AUTO_INCREMENT PRIMARY KEY,
 			  `date` date NOT NULL COMMENT 'Date',
 			  `place` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place',
 			  `slot` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place slot',
@@ -116,7 +116,7 @@ class bookings extends frontControllerApplication
 				Any fields whose name starts with 'internal' will be shown only to internal users and not general users filling out the request form.
 			*/
 			CREATE TABLE IF NOT EXISTS `requests` (
-			  `id` int(11) NOT NULL COMMENT 'Request no.' PRIMARY KEY,
+			  `id` int(11) NOT NULL COMMENT 'Request no.' AUTO_INCREMENT PRIMARY KEY,
 		--	  `visitType` enum('Museum visit','Museum workshop','Museum tour','Museum outreach') COLLATE utf8_unicode_ci NOT NULL COMMENT 'Visit type',
 		--	  `visitTypeOther` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT '(Specific details)',
 		--	  `institutionType` enum('','School','Language school','Further Education (sixth form)','Higher Education (degree-level)','Other') COLLATE utf8_unicode_ci NOT NULL COMMENT 'Type of institution',
@@ -145,7 +145,7 @@ class bookings extends frontControllerApplication
 			) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Table of requests';
 			
 			CREATE TABLE IF NOT EXISTS `settings` (
-			  `id` int(11) NOT NULL COMMENT 'Automatic key (ignored)' PRIMARY KEY,
+			  `id` int(11) NOT NULL COMMENT 'Automatic key (ignored)' AUTO_INCREMENT PRIMARY KEY,
 			  `listMonthsAheadPublic` int(2) NOT NULL DEFAULT '3' COMMENT 'How many months ahead to list (public)',
 			  `listMonthsAheadPrivate` int(2) NOT NULL DEFAULT '12' COMMENT 'How many months ahead to list (private)',
 			  `excludeNextDays` int(2) NOT NULL DEFAULT '5' COMMENT 'How many days from today it should not list',
