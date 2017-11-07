@@ -158,7 +158,7 @@ class bookings extends frontControllerApplication
 			  `icalMonthsBack` INT(11) NULL DEFAULT NULL COMMENT 'How many months back should the iCal feed start from? (Leave blank to show everything.)',
 			  `introductoryTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Introductory text',
 			  `bookingPageTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Booking page introductory text',
-			  `awayMessage` VARCHAR(255) NULL COMMENT 'Away message' AFTER `bookingPageTextHtml`
+			  `awayMessage` VARCHAR(255) NULL COMMENT 'Away message'
 			) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Settings';
 		";
 	}
