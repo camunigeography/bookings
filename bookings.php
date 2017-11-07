@@ -184,6 +184,19 @@ class bookings extends frontControllerApplication
 			);
 		}
 		
+		# Ensure a settings entry is present
+		#!# Should be converted to generic handling in frontControllerApplication
+		if (!isSet ($this->settings['listMonthsAheadPublic'])) {	// Any settings table setting would do
+			if ($this->userIsAdministrator) {
+				if ($this->action != 'settings') {
+					echo "\n<p>Please enter the <a href=\"{$this->baseUrl}/settings.html\">settings</a> for this installation.</p>";
+					return false;
+				}
+			} else {
+				echo "\n<p>This system is not yet set up. The administrator needs to log in and add settings. Please check back later.</p>";
+				return false;
+			}
+		}
 	}
 	
 	
