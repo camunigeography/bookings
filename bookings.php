@@ -650,7 +650,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Start the HTML
-		$html .= "\n<h2>Request a booking for: the <u>" . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . '</u> of <u>' . timedate::convertBackwardsDateToText ($date) . '</u>' . '</h2>';
+		$html .= "\n<h2>Request a booking for: <u>" . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . '</u> on <u>' . timedate::convertBackwardsDateToText ($date) . '</u>' . '</h2>';
 		
 		# Determine the e-mail introductory text, which will include the link to the record about to be written; sending the e-mail manually just after the database write is very messy
 		$currentHighestIdQuery = "SELECT MAX(id) AS currentHighestId FROM {$this->settings['database']}.requests;";
@@ -727,7 +727,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Data protection statement
-		$form->heading ('p', 'By submitting this form you are agreeing to this information being kept as a record of your visit.');
+		$form->heading ('p', 'By submitting this form you are agreeing to this information being stored in our records.');
 		
 		# E-mail the result; if there is a visitType, show this in the subject line
 		$subject = $this->settings['applicationName'] . ' for ' . timedate::convertBackwardsDateToText (($unfinalisedData ? $unfinalisedData['date'] : $date)) . " in the {$this->places[$place]['labelAbbreviatedLowercase']}";
@@ -822,10 +822,10 @@ class bookings extends frontControllerApplication
 			)
 		);
 		$attributes['institutionType'] = array (
-			'heading' => array (3 => 'Details of group'),
+			'heading' => array (3 => 'Group details'),
 		);
 		$attributes['date'] = array (
-			'heading' => array (3 => 'Details of visit'),
+			'heading' => array (3 => 'Booking request'),
 		);
 		$attributes['country'] = array (
 			'type' => 'select',
