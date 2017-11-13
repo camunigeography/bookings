@@ -149,6 +149,7 @@ class bookings extends frontControllerApplication
 			  `listMonthsAheadPublic` int(2) NOT NULL DEFAULT '3' COMMENT 'How many months ahead to list (public)',
 			  `listMonthsAheadPrivate` int(2) NOT NULL DEFAULT '12' COMMENT 'How many months ahead to list (private)',
 			  `excludeNextDays` int(2) NOT NULL DEFAULT '5' COMMENT 'How many days from today it should not list',
+			  `period` ENUM('days','weeks') CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT 'days' COMMENT 'Booking period',
 			  `weekdays` set('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Show which days?',
 			  `places` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place title URL monikers',
 			  `placeLabels` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place labels',
@@ -211,6 +212,19 @@ class bookings extends frontControllerApplication
 			$widgetsRequired = ($unfinalisedData['listMonthsAheadPrivate'] * 31 * count ($submittedPlaceTitles));
 			if ($widgetsRequired > ini_get ('max_input_vars')) {
 				$form->registerProblem ('toomany', 'The number of months is too high (too many input boxes would have to be created, beyond what the server can handle). Please reduce the number.', 'listMonthsAheadPrivate');
+			}
+			
+			# Ensure 'weeks' period has only one day, representing the first day of the week
+			if ($unfinalisedData['period'] == 'weeks') {
+				$totalWeekdays = 0;
+				foreach ($unfinalisedData['weekdays'] as $weekday) {
+					if ($weekday) {
+						$totalWeekdays++;
+					}
+				}
+				if ($totalWeekdays != 1) {
+					$form->registerProblem ('weekdaysInvalid', 'If setting the period to weeks, you must specify exactly one weekday, representing the day of the week the booking starts on.', 'weekdays');
+				}
 			}
 		}
 	}
@@ -478,6 +492,9 @@ class bookings extends frontControllerApplication
 			
 			# Get the formatted date and set this as the first column
 			$table[$key]['date'] = date ('l, jS F Y', strtotime ($date));
+			if ($this->settings['period'] == 'weeks') {
+				$table[$key]['date'] = 'Week beginning <br />' . $table[$key]['date'];
+			}
 			
 			# Determine whether the institution is closed this day
 			$isClosedToday = $this->isClosedToday ($bookedSlotsData, $date);
@@ -614,7 +631,8 @@ class bookings extends frontControllerApplication
 		
 		# Get the dates; admins can access all dates
 		if ($this->userIsAdministrator) {
-			$dates = $this->getDates (true, true);
+			$editMode = ($this->settings['period'] == 'weeks' ? false : true);	// Edit mode, which shows all dates, should never be permitted for week periods
+			$dates = $this->getDates (true, $editMode);
 		} else {
 			$dates = $this->getDates ();
 		}
@@ -695,7 +713,7 @@ class bookings extends frontControllerApplication
 			'database' => $this->settings['database'],
 			'table' => 'requests',
 			'intelligence' => true,
-			'attributes' => $this->formDataBindingAttributes (),
+			'attributes' => $this->formDataBindingAttributes ($dates),
 			'exclude' => $exclude,
 			'data' => array ('date' => $date, 'place' => $place, ),
 		));
@@ -789,7 +807,7 @@ class bookings extends frontControllerApplication
 	
 	
 	# Data binding attributes
-	private function formDataBindingAttributes ()
+	private function formDataBindingAttributes ($dates)
 	{
 		# Start an array of attributes
 		$attributes = array ();
@@ -806,6 +824,25 @@ class bookings extends frontControllerApplication
 			'defaultPresplit' => true,
 			'separator' => ',', /* #!# Ideally wouldn't be required - see note in ultimateForm re defaultPresplit */
 		);
+		
+		# If the booking period is in weeks, convert the requested date and alternative date to week drop-down lists
+		$attributes['date'] = array ();
+		if ($this->settings['period'] == 'weeks') {
+			$datesFormatted = array ();
+			foreach ($dates as $date) {
+				$datesFormatted[$date] = 'W/c ' . date ('D jS F Y', strtotime ($date));
+			}
+			$attributes['date'] = array (
+				'type' => 'select',
+				'title' => 'Requested week (week commencing)',
+				'values' => $datesFormatted,
+			);
+			$attributes['alternativeDates'] = array (
+				'type' => 'select',
+				'title' => 'Alternative week (week commencing)',
+				'values' => $datesFormatted,
+			);
+		}
 		
 		# Attributes (which may or may not be present, depending on table structure)
 		$attributes['subsequentdays'] = array (
@@ -824,9 +861,7 @@ class bookings extends frontControllerApplication
 		$attributes['institutionType'] = array (
 			'heading' => array (3 => 'Group details'),
 		);
-		$attributes['date'] = array (
-			'heading' => array (3 => 'Booking request'),
-		);
+		$attributes['date']['heading'] = array (3 => 'Booking request');
 		$attributes['country'] = array (
 			'type' => 'select',
 			'values' => form::getCountries ($additionalStart = array ('United Kingdom', 'Group of visitors from multiple countries') ),
@@ -847,8 +882,16 @@ class bookings extends frontControllerApplication
 	# Admin editing section, substantially delegated to the sinenomine editing component
 	public function requests ()
 	{
+		# Get the dates; admins can access all dates
+		if ($this->userIsAdministrator) {
+			$editMode = ($this->settings['period'] == 'weeks' ? false : true);	// Edit mode, which shows all dates, should never be permitted for week periods
+			$dates = $this->getDates (true, $editMode);
+		} else {
+			$dates = $this->getDates ();
+		}
+		
 		# Get the databinding attributes
-		$dataBindingAttributes = $this->formDataBindingAttributes ();
+		$dataBindingAttributes = $this->formDataBindingAttributes ($dates);
 		
 		# Define extra settings
 		$sinenomineExtraSettings = array (
