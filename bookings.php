@@ -159,6 +159,7 @@ class bookings extends frontControllerApplication
 			  `icalMonthsBack` INT(11) NULL DEFAULT NULL COMMENT 'How many months back should the iCal feed start from? (Leave blank to show everything.)',
 			  `introductoryTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Introductory text',
 			  `bookingPageTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Booking page introductory text',
+			  `agreementText` VARCHAR(255) NULL DEFAULT NULL COMMENT 'Agreement tickbox text at end (if any)',
 			  `awayMessage` VARCHAR(255) NULL COMMENT 'Away message'
 			) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Settings';
 		";
@@ -745,7 +746,18 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Data protection statement
+		$form->heading (2, 'Agreement');
 		$form->heading ('p', 'By submitting this form you are agreeing to this information being stored in our records.');
+		if ($this->settings['agreementText']) {
+			$form->checkboxes (array (
+				'name'		=> 'agreement',
+				'title'		=> 'Confirmation',
+				'values'	=> array ($this->settings['agreementText']),
+				'required'	=> 1,
+				'discard'	=> true,
+			));
+		}
+		
 		
 		# E-mail the result; if there is a visitType, show this in the subject line
 		$subject = $this->settings['applicationName'] . ' for ' . timedate::convertBackwardsDateToText (($unfinalisedData ? $unfinalisedData['date'] : $date)) . " in the {$this->places[$place]['labelAbbreviatedLowercase']}";
