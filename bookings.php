@@ -148,8 +148,8 @@ class bookings extends frontControllerApplication
 			  `id` int(11) NOT NULL COMMENT 'Automatic key (ignored)' AUTO_INCREMENT PRIMARY KEY,
 			  `listMonthsAheadPublic` int(2) NOT NULL DEFAULT '3' COMMENT 'How many months ahead to list (public)',
 			  `listMonthsAheadPrivate` int(2) NOT NULL DEFAULT '12' COMMENT 'How many months ahead to list (private)',
-			  `excludeNextDays` int(2) NOT NULL DEFAULT '5' COMMENT 'How many days from today it should not list',
 			  `period` ENUM('days','weeks') CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT 'days' COMMENT 'Booking period',
+			  `excludeNextPeriod` int(2) NOT NULL DEFAULT '5' COMMENT 'How many days/weeks from today should not be listed publicly',
 			  `weekdays` set('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Show which days?',
 			  `places` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place title URL monikers',
 			  `placeLabels` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place labels',
@@ -259,7 +259,7 @@ class bookings extends frontControllerApplication
 		
 		# Remove earliest dates in the public list
 		if (!$fromToday) {
-			for ($i = 0; $i < $this->settings['excludeNextDays']; $i++) {
+			for ($i = 0; $i < $this->settings['excludeNextPeriod']; $i++) {
 				array_shift ($dates);
 			}
 		}
