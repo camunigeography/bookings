@@ -234,6 +234,11 @@ class bookings extends frontControllerApplication
 	# Function to get the dates for future months; enable-all-days mode removes various restrictions
 	public function getDates ($fromToday = false, $enableAllDays = false)
 	{
+		# Never enable all dates when in weeks mode
+		if ($this->settings['period'] == 'weeks') {
+			$enableAllDays = false;
+		}
+		
 		# Determine the days to show
 		$weekdays = ($this->settings['weekdays'] ? explode (',', strtolower ($this->settings['weekdays'])) : true);
 		if ($enableAllDays) {
@@ -460,8 +465,6 @@ class bookings extends frontControllerApplication
 		# Get the booked slots data (which may be empty)
 		$bookedSlotsData = $this->getBookedSlotsData ($dates);
 		
-//application::dumpData ($bookedSlotsData);
-		
 		# Determine the first day of the week in the settings
 		$weekdays = explode (',', strtolower ($this->settings['weekdays']));
 		$firstDayOfWeekInSettings = $weekdays[0];
@@ -632,8 +635,7 @@ class bookings extends frontControllerApplication
 		
 		# Get the dates; admins can access all dates
 		if ($this->userIsAdministrator) {
-			$editMode = ($this->settings['period'] == 'weeks' ? false : true);	// Edit mode, which shows all dates, should never be permitted for week periods
-			$dates = $this->getDates (true, $editMode);
+			$dates = $this->getDates (true, true);
 		} else {
 			$dates = $this->getDates ();
 		}
@@ -896,8 +898,7 @@ class bookings extends frontControllerApplication
 	{
 		# Get the dates; admins can access all dates
 		if ($this->userIsAdministrator) {
-			$editMode = ($this->settings['period'] == 'weeks' ? false : true);	// Edit mode, which shows all dates, should never be permitted for week periods
-			$dates = $this->getDates (true, $editMode);
+			$dates = $this->getDates (true, true);
 		} else {
 			$dates = $this->getDates ();
 		}
