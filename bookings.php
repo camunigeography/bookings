@@ -253,8 +253,7 @@ class bookings extends frontControllerApplication
 			$datesPublic = $dates;
 			$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPrivate'], 'Y-m-d', $weekdays);
 			$privateDates = array_diff ($dates, $datesPublic);
-			$privateDatesValues = array_values ($privateDates);	// This temp has to be used to avoid "Strict Standards: Only variables should be passed by reference"
-			$this->firstPrivateDate = reset ($privateDatesValues);
+			$this->firstPrivateDate = application::array_first_value ($privateDates);
 		}
 		
 		# Remove earliest dates in the public list
