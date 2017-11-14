@@ -249,7 +249,7 @@ class bookings extends frontControllerApplication
 		$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPublic'], 'Y-m-d', $weekdays);
 		
 		# If the user is an admin, show the fuller list, and determine the first date that is private
-		if ($enableAllDays) {
+		if ($this->userIsAdministrator) {
 			$datesPublic = $dates;
 			$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPrivate'], 'Y-m-d', $weekdays);
 			$privateDates = array_diff ($dates, $datesPublic);
