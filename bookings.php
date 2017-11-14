@@ -231,12 +231,12 @@ class bookings extends frontControllerApplication
 	}
 	
 	
-	# Function to get the dates for future months; edit mode removes various restrictions
-	public function getDates ($fromToday = false, $editMode = false)
+	# Function to get the dates for future months; enable-all-days mode removes various restrictions
+	public function getDates ($fromToday = false, $enableAllDays = false)
 	{
 		# Determine the days to show
 		$weekdays = ($this->settings['weekdays'] ? explode (',', strtolower ($this->settings['weekdays'])) : true);
-		if ($editMode) {
+		if ($enableAllDays) {
 			$weekdays = true;
 		}
 		
@@ -244,7 +244,7 @@ class bookings extends frontControllerApplication
 		$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPublic'], 'Y-m-d', $weekdays);
 		
 		# If the user is an admin, show the fuller list, and determine the first date that is private
-		if ($editMode) {
+		if ($enableAllDays) {
 			$datesPublic = $dates;
 			$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPrivate'], 'Y-m-d', $weekdays);
 			$privateDates = array_diff ($dates, $datesPublic);
