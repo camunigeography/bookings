@@ -28,7 +28,6 @@ class bookings extends frontControllerApplication
 			'settings' => true,
 			'settingsTableExplodeTextarea' => true,
 			'serverAdministrator'	=> NULL,	// E-mail address of the server administrator
-			'recipient'	=> NULL,	// Who to send the e-mail requests to
 			'form' => true,
 			'div' => 'bookings',
 			'formDiv' => 'lines ultimateform horizontalonly bookingform',
@@ -146,6 +145,7 @@ class bookings extends frontControllerApplication
 			
 			CREATE TABLE IF NOT EXISTS `settings` (
 			  `id` int(11) NOT NULL COMMENT 'Automatic key (ignored)' AUTO_INCREMENT PRIMARY KEY,
+			  `recipient` VARCHAR(255) NOT NULL COMMENT 'E-mail recipient',
 			  `listMonthsAheadPublic` int(2) NOT NULL DEFAULT '3' COMMENT 'How many months ahead to list (public)',
 			  `listMonthsAheadPrivate` int(2) NOT NULL DEFAULT '12' COMMENT 'How many months ahead to list (private)',
 			  `period` ENUM('days','weeks') CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT 'days' COMMENT 'Booking period',
@@ -758,7 +758,6 @@ class bookings extends frontControllerApplication
 				'discard'	=> true,
 			));
 		}
-		
 		
 		# E-mail the result; if there is a visitType, show this in the subject line
 		$subject = $this->settings['applicationName'] . ' for ' . timedate::convertBackwardsDateToText (($unfinalisedData ? $unfinalisedData['date'] : $date)) . " in the {$this->places[$place]['labelAbbreviatedLowercase']}";
