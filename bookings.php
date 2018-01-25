@@ -676,7 +676,9 @@ class bookings extends frontControllerApplication
 		$currentHighestIdQuery = "SELECT MAX(id) AS currentHighestId FROM {$this->settings['database']}.requests;";
 		$currentHighestId = $this->databaseConnection->getOneField ($currentHighestIdQuery, 'currentHighestId');
 		$predictedId = $currentHighestId + 1;
-		$emailIntroductoryText  = "Thank you for your booking request. Please await confirmation before proceeding with your visit.";
+		#!# Need to make this configurable in the settings
+		// $emailIntroductoryText  = "Thank you for your booking request. Please await confirmation before proceeding with your visit.";
+		$emailIntroductoryText  = 'Thank you for your booking request. Please await confirmation from our staff.';
 		$emailIntroductoryText .= "\n\n\n" . str_repeat ('*', 76);
 		$emailIntroductoryText .= "\n\nYou should review this online at:";
 		$emailIntroductoryText .= "\n\n" . $_SERVER['_SITE_URL'] . $this->baseUrl . '/requests/' . $predictedId . '/edit.html';
