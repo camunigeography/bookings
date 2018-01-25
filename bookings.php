@@ -738,10 +738,10 @@ class bookings extends frontControllerApplication
 			# Check the date(s) requested are valid
 			if ($unfinalisedData['date']) {
 				$requestedPlaces = array ();
-				foreach ($unfinalisedData['place'] as $place => $requested) {
+				foreach ($unfinalisedData['place'] as $placeId => $requested) {
 					if ($requested) {
-						if (!$this->placesAvailable ($dates, $bookedSlotsData, $unfinalisedData['date'], $place, $errorMessageHtml)) {
-							$form->registerProblem ("placesunavailable{$place}", $errorMessageHtml);
+						if (!$this->placesAvailable ($dates, $bookedSlotsData, $unfinalisedData['date'], $placeId, $errorMessageHtml)) {
+							$form->registerProblem ("placesunavailable{$placeId}", $errorMessageHtml);
 						}
 					}
 				}
