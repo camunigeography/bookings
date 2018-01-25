@@ -762,7 +762,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# E-mail the result; if there is a visitType, show this in the subject line
-		$subject = $this->settings['applicationName'] . ' for ' . timedate::convertBackwardsDateToText (($unfinalisedData ? $unfinalisedData['date'] : $date)) . " in the {$this->places[$place]['labelAbbreviatedLowercase']}";
+		$subject = $this->settings['applicationName'] . ' for ' . timedate::convertBackwardsDateToText (($unfinalisedData ? $unfinalisedData['date'] : $date)) . ": {$this->places[$place]['labelAbbreviatedLowercase']}";
 		$formSpecification = $form->getSpecification ();
 		if (isSet ($formSpecification['visitType'])) {
 			$subject = "{name} - {visitType|compiled}";
