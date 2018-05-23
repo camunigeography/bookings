@@ -751,6 +751,7 @@ class bookings extends frontControllerApplication
 		# Data protection statement
 		$form->heading (2, 'Agreement');
 		$form->heading ('p', 'By submitting this form you are agreeing to this information being stored in our records.');
+		$form->heading ('p', 'Information you submit here will be used only in accordance with the <a href="https://www.information-compliance.admin.cam.ac.uk/data-protection/general-data" target="_blank" title="[Link opens in a new window]">University\'s privacy and data protection policy</a>.');
 		if ($this->settings['agreementText']) {
 			$form->checkboxes (array (
 				'name'		=> 'agreement',
