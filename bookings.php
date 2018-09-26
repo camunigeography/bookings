@@ -896,6 +896,15 @@ class bookings extends frontControllerApplication
 		$attributes['internalPhoneCallLog'] = array (
 			'rows' => 10,
 		);
+		#!# These two force the input widget to be numeric, pending ultimateForm change (which merely uses enforceNumeric)
+		$attributes['participants'] = array (
+			'type' => 'number',
+			'min' => 0,
+		);
+		$attributes['adults'] = array (
+			'type' => 'number',
+			'min' => 0,
+		);
 		
 		# Return the array
 		return $attributes;
