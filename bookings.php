@@ -777,7 +777,15 @@ class bookings extends frontControllerApplication
 		if ($result = $form->process ($html)) {
 			
 			# Save to the database
-			$this->databaseConnection->insert ($this->settings['database'], 'requests', $result);
+			if (!$this->databaseConnection->insert ($this->settings['database'], 'requests', $result)) {
+				#!# The e-mail is still sent though
+				$html = "<p>Apologies, an error occured when saving your submission. Please contact the Webmaster.</p>";
+				if ($this->userIsAdministrator) {
+					application::dumpData ($this->databaseConnection->error ());
+				}
+				echo $html;
+				return false;
+			}
 			
 			# Confirm success, wiping out any previously-generated HTML
 			$html  = "\n<h2>Request a booking</h2>";
