@@ -468,9 +468,6 @@ class bookings extends frontControllerApplication
 		$weekdays = explode (',', strtolower ($this->settings['weekdays']));
 		$firstDayOfWeekInSettings = $weekdays[0];
 		
-		# Define the first slot
-		$firstPlace = array_shift (array_keys ($this->places));
-		
 		# Assemble the data for a table, looping through the dates, so that all are shown, irrespective of whether a booking is present
 		$table = array ();
 		foreach ($dates as $date) {
