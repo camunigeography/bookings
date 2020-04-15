@@ -155,7 +155,7 @@ class bookings extends frontControllerApplication
 			  `placeLabels` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place labels',
 			  `placeLabelsAbbreviated` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place labels (abbreviated)',
 			  `placeSlots` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Slots per place title',
-			  `placeTimePeriods` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place time periods (CSV)',
+			  `placeTimePeriods` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place time periods (as comma-separated pairs), used for iCal calendar feed',
 			  `icalMonthsBack` INT(11) NULL DEFAULT NULL COMMENT 'How many months back should the iCal feed start from? (Leave blank to show everything.)',
 			  `introductoryTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Introductory text',
 			  `bookingPageTextHtml` text COLLATE utf8_unicode_ci COMMENT 'Booking page introductory text',
