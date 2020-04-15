@@ -213,6 +213,8 @@ class bookings extends frontControllerApplication
 				'places'				=> array ('heading' => array (3 => 'Places')),
 				'icalMonthsBack'		=> array ('heading' => array (3 => 'Calendar feed')),
 				'introductoryTextHtml'	=> array ('heading' => array (3 => 'Notice/message texts')),
+				'agreementText'			=> array ('size' => 80),
+				'awayMessage'			=> array ('size' => 80),
 			),
 		);
 		
