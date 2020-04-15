@@ -202,6 +202,25 @@ class bookings extends frontControllerApplication
 	}
 	
 	
+	# Settings
+	public function settings ($dataBindingSettingsOverrides = array ())
+	{
+		# Define overrides
+		$dataBindingSettingsOverrides = array (
+			'attributes' => array (
+				'recipient'				=> array ('heading' => array (3 => 'Notifications')),
+				'listMonthsAheadPublic'	=> array ('heading' => array (3 => 'Listings of bookable places')),
+				'places'				=> array ('heading' => array (3 => 'Places')),
+				'icalMonthsBack'		=> array ('heading' => array (3 => 'Calendar feed')),
+				'introductoryTextHtml'	=> array ('heading' => array (3 => 'Notice/message texts')),
+			),
+		);
+		
+		# Run the main settings system with the overriden attributes
+		return parent::settings ($dataBindingSettingsOverrides);
+	}
+	
+	
 	# Settings additional processing
 	public function settingsGetUnfinalised (&$form)
 	{

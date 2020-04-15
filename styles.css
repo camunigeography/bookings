@@ -18,4 +18,4 @@
 #bookings .bookingform tr.visitTypeOther input {margin-left: 21px; position: relative; top: -12px;}
 #bookings .bookingform tr.visitTypeOther td {border-top: 0;}
 #bookings .bookingform tr.visitTypeOther td.title {color: white;}
-
+#bookings .settings h3 {margin-top: 2em;}
