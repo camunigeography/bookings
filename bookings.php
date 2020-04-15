@@ -912,11 +912,7 @@ class bookings extends frontControllerApplication
 	public function requests ()
 	{
 		# Get the dates; admins can access all dates
-		if ($this->userIsAdministrator) {
-			$dates = $this->getDates (true, true);
-		} else {
-			$dates = $this->getDates ();
-		}
+		$dates = $this->getDates (true, true);
 		
 		# Get the databinding attributes
 		$dataBindingAttributes = $this->formDataBindingAttributes ($dates);
