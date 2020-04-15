@@ -224,7 +224,7 @@ class bookings extends frontControllerApplication
 	
 	
 	# Settings additional processing
-	public function settingsGetUnfinalised (&$form)
+	public function settingsGetUnfinalised (&$form)		/* called by front controller */
 	{
 		# Add getUnfinalised processing
 		if ($unfinalisedData = $form->getUnfinalisedData ()) {
@@ -247,6 +247,19 @@ class bookings extends frontControllerApplication
 				if ($totalWeekdays != 1) {
 					$form->registerProblem ('weekdaysInvalid', 'If setting the period to weeks, you must specify exactly one weekday, representing the day of the week the booking starts on.', 'weekdays');
 				}
+			}
+			
+			# Ensure that the place groupings have a consistent number of entries
+			$placeFields = array ('places', 'placeLabels', 'placeLabelsAbbreviated', 'placeSlots', 'placeTimePeriods');
+			$counts = array ();
+			foreach ($placeFields as $placeField) {
+				if ($unfinalisedData[$placeField]) {
+					$entries = explode ("\n", trim ($unfinalisedData[$placeField]));
+					$counts[] = count ($entries);
+				}
+			}
+			if (count (array_unique ($counts)) != 1) {
+				$form->registerProblem ('inconsistentPlaces', 'The number of entries in each of the places-related fields must be consistent.');
 			}
 		}
 	}
