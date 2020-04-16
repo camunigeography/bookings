@@ -149,6 +149,7 @@ class bookings extends frontControllerApplication
 			  `listMonthsAheadPublic` int(2) NOT NULL DEFAULT '3' COMMENT 'How many months ahead to list (public)',
 			  `listMonthsAheadPrivate` int(2) NOT NULL DEFAULT '12' COMMENT 'How many months ahead to list (private)',
 			  `period` ENUM('days','weeks') CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT 'days' COMMENT 'Booking period',
+			  `weeksEarliestDate` DATE NULL COMMENT 'In weeks mode (for booking period), earliest available date in list',
 			  `excludeNextPeriod` int(2) NOT NULL DEFAULT '5' COMMENT 'How many days/weeks from today should not be listed publicly',
 			  `weekdays` set('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Show which days?',
 			  `places` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'Place title URL monikers',
@@ -210,6 +211,7 @@ class bookings extends frontControllerApplication
 			'attributes' => array (
 				'recipient'				=> array ('heading' => array (3 => 'Notifications')),
 				'listMonthsAheadPublic'	=> array ('heading' => array (3 => 'Listings of bookable places')),
+				'weeksEarliestDate'		=> array ('picker' => true),
 				'places'				=> array ('heading' => array (3 => 'Places')),
 				'icalMonthsBack'		=> array ('heading' => array (3 => 'Calendar feed')),
 				'introductoryTextHtml'	=> array ('heading' => array (3 => 'Notice/message texts')),
@@ -266,7 +268,7 @@ class bookings extends frontControllerApplication
 	
 	
 	# Function to get the dates for future months; enable-all-days mode removes various restrictions
-	public function getDates ($fromToday = false, $enableAllDays = false)
+	public function getDates ($fromToday = false, $enableAllDays = false, $includeEarliestDate = false)
 	{
 		# Never enable all dates when in weeks mode
 		if ($this->settings['period'] == 'weeks') {
@@ -280,12 +282,12 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Create an array of dates in future months
-		$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPublic'], 'Y-m-d', $weekdays);
+		$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPublic'], 'Y-m-d', $weekdays, $includeEarliestDate);
 		
 		# If the user is an admin, show the fuller list, and determine the first date that is private
 		if ($this->userIsAdministrator) {
 			$datesPublic = $dates;
-			$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPrivate'], 'Y-m-d', $weekdays);
+			$dates = timedate::getDatesForFutureMonths ($this->settings['listMonthsAheadPrivate'], 'Y-m-d', $weekdays, $includeEarliestDate);
 			$privateDates = array_diff ($dates, $datesPublic);
 			$this->firstPrivateDate = application::array_first_value ($privateDates);
 		}
@@ -946,7 +948,7 @@ class bookings extends frontControllerApplication
 	public function requests ()
 	{
 		# Get the dates; admins can access all dates
-		$dates = $this->getDates (true, true);
+		$dates = $this->getDates (true, true, $this->settings['weeksEarliestDate'] /* earliest date for drop-down, in weeks mode, or NULL when days mode */);
 		
 		# Get the databinding attributes
 		$dataBindingAttributes = $this->formDataBindingAttributes ($dates);
