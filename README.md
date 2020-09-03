@@ -43,5 +43,5 @@ Martin Lucas-Smith, Department of Geography, 2012-5.
 License
 -------
 
-GPL2.
+GPL3.
 
