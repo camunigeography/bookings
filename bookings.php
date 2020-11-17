@@ -32,6 +32,7 @@ class bookings extends frontControllerApplication
 			'div' => 'bookings',
 			'formDiv' => 'lines ultimateform horizontalonly bookingform',
 			'formValidationCallback' => false,
+			'tabUlClass' => 'tabsflat',
 		);
 		
 		# Return the defaults
