@@ -948,8 +948,30 @@ class bookings extends frontControllerApplication
 	# Admin editing section, substantially delegated to the sinenomine editing component
 	public function requests ()
 	{
+		# Determine the earliest date to show in the drop-down forms
+		$weeksEarliestDate = $this->settings['weeksEarliestDate'];		// Earliest date for drop-down, in weeks mode, or NULL when days mode
+		
+		# In weeks mode, the date/alternativeDate may not be in the range {weeksEarliestDate -> listMonthsAheadPrivate months ahead}, so determine the record date, and then create a range from several months before that
+		if ($weeksEarliestDate) {
+			if (isSet ($_GET['record']) && ctype_digit ($_GET['record'])) {		// i.e. record selected in sub-UI
+				
+				# Get the dates in the record
+				if ($record = $this->databaseConnection->selectOne ($this->settings['database'], __FUNCTION__, array ('id' => $_GET['record']))) {
+					$dateInRecord = $record['date'];
+					if ($record['alternativeDates']) {
+						$dateInRecord = min ($record['date'], $record['alternativeDates']);
+					}
+					
+					# Rewind a year before the requested date
+					$rewindMonths = 12;		// i.e. this many months back that the droplist will show from the earliest of date/alternativeDate
+					$weeksEarliestDate = date ('Y-m-d', strtotime ("-{$rewindMonths} months", strtotime ($dateInRecord)));
+					$this->settings['listMonthsAheadPrivate'] += $rewindMonths;		// Extend the range, e.g. 6 months becomes 18 (the new 12 before, plus the original 6 ahead)
+				}
+			}
+		}
+		
 		# Get the dates; admins can access all dates
-		$dates = $this->getDates (true, true, $this->settings['weeksEarliestDate'] /* earliest date for drop-down, in weeks mode, or NULL when days mode */);
+		$dates = $this->getDates (true, true, $weeksEarliestDate);
 		
 		# Get the databinding attributes
 		$dataBindingAttributes = $this->formDataBindingAttributes ($dates);
