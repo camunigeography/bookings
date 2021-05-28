@@ -37,7 +37,7 @@ Dependencies
 Author
 ------
 
-Martin Lucas-Smith, Department of Geography, 2012-5.
+Martin Lucas-Smith, Department of Geography / Scott Polar Research Institute, 2012-20.
 
 
 License
