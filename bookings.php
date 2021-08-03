@@ -983,6 +983,7 @@ class bookings extends frontControllerApplication
 			'headingLevel' => 2,
 			'int1ToCheckbox' => true,
 			'datePicker' => true,
+			'orderby' => array (__FUNCTION__ => 'id DESC'),
 		);
 		
 		# Delegate to the standard function for editing
