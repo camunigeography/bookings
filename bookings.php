@@ -394,7 +394,13 @@ class bookings extends frontControllerApplication
 	public function home ()
 	{
 		# Start the HTML
-		$html  = $this->settings['introductoryTextHtml'];
+		$html = '';
+		
+		# Introductory text
+		if ($this->userIsAdministrator) {
+			$html .= "\n" . '<p class="actions right"><a href="' . $this->baseUrl . '/settings.html#form_introductoryTextHtml"><img src="/images/icons/pencil.png" alt=""> Edit text</a></p>';
+		}
+		$html .= $this->settings['introductoryTextHtml'];
 		
 		# Button and introduction for admins
 		if ($this->userIsAdministrator) {
