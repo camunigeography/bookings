@@ -846,7 +846,7 @@ class bookings extends frontControllerApplication
 	private function placesAvailable ($dates, $bookedSlotsData, $date, $place, &$errorMessageHtml)
 	{
 		# Define an error message
-		$errorMessageHtml = 'Sorry, there are no slots available for the ' . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . ' of ' . timedate::convertBackwardsDateToText ($date) . '.';
+		$errorMessageHtml = '<p>Sorry, there are no slots available for the ' . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . ' of ' . timedate::convertBackwardsDateToText ($date) . '.</p>';
 		
 		# Not available if not a valid date
 		if (!in_array ($date, $dates)) {return false;}
