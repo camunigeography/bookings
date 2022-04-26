@@ -982,6 +982,9 @@ class bookings extends frontControllerApplication
 		# Get the databinding attributes
 		$dataBindingAttributes = $this->formDataBindingAttributes ($dates);
 		
+		# For admin editing, tolerate old visit types that are no longer present
+		$dataBindingAttributes['visitType']['tolerateInvalid'] = true;
+		
 		# Define extra settings
 		$sinenomineExtraSettings = array (
 			'formDiv' => $this->settings['formDiv'],
