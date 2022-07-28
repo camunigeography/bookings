@@ -201,6 +201,9 @@ class bookings extends frontControllerApplication
 				return false;
 			}
 		}
+		
+		# Set feedback form recipient to be both the main recipient address and the server admin
+		$this->settings['feedbackRecipient'] = array_unique (array_merge (array ($this->settings['recipient']), application::ensureArray ($this->settings['feedbackRecipient'])));
 	}
 	
 	
