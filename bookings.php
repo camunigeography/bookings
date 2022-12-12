@@ -987,6 +987,7 @@ class bookings extends frontControllerApplication
 		
 		# For admin editing, tolerate old visit types that are no longer present
 		$dataBindingAttributes['visitType']['tolerateInvalid'] = true;
+		$dataBindingAttributes['place']['tolerateInvalid'] = true;
 		
 		# Define extra settings
 		$sinenomineExtraSettings = array (
