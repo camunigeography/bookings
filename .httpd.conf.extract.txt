@@ -18,8 +18,7 @@
 	# Disable all kinds of access restriction on export files (as calendars cannot do Raven authentication)
 	RewriteRule ^$applicationBaseUrl/bookings.ics$ $applicationBaseUrl/index.html?action=ical [L,QSA]
 	<LocationMatch "\.ics$">
-		Satisfy Any
-		Allow from all
+		Require all granted
 		php_value auto_prepend_file none
 		php_value auto_append_file none
 	</LocationMatch>
