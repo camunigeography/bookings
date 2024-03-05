@@ -7,7 +7,6 @@
 
 
 # Class to provide a system for booking availability slots
-require_once ('frontControllerApplication.php');
 class bookings extends frontControllerApplication
 {
 	# Class properties
@@ -171,9 +170,6 @@ class bookings extends frontControllerApplication
 	# Additional processing
 	public function main ()
 	{
-		# Load required libraries
-		require_once ('timedate.php');
-		
 		# Compile the place settings into an array
 		$this->places = array ();
 		foreach ($this->settings['places'] as $index => $moniker) {
@@ -1011,7 +1007,6 @@ class bookings extends frontControllerApplication
 		$icsFile = $this->baseUrl . '/' . $this->actions['ical']['url'];
 		
 		# Delegate to iCal class
-		require_once ('ical.php');
 		$ical = new ical ();
 		$html = $ical->instructionsLink ($icsFile);
 		
@@ -1063,7 +1058,6 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Delegate to iCal class
-		require_once ('ical.php');
 		$ical = new ical ();
 		echo $ical->create ($events, application::pluralise ($this->settings['applicationName']), 'University of Cambridge - Departmental code', $this->settings['applicationName']);
 	}

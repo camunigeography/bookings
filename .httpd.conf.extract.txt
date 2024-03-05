@@ -1,9 +1,5 @@
 # Apache httpd.conf extract providing URL routing and other directives
-<Macro MacroBookingsSystem $applicationBaseUrl $title $includePath>
-	
-	<Location $applicationBaseUrl>
-		php_value include_path "$includePath"
-	</Location>
+<Macro MacroBookingsSystem $applicationBaseUrl $title>
 	
 	php_admin_value max_input_vars 2500
 	

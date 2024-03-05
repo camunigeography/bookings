@@ -31,7 +31,7 @@ function formValidationCallback ($unfinalisedData, &$errorMessage = false, &$hig
 
 
 # Load and instantiate the bookings application
-require_once ('bookings.php');
+require_once ('vendor/autoload.php');
 new bookings ($settings);
 
 ?>
