@@ -1,9 +1,16 @@
-# Apache httpd.conf extract providing URL routing and other directives
-<Macro MacroBookingsSystem $applicationBaseUrl $title>
+# Bookings system Apache directives
+
+# Load using:
+#	# Bookings system
+#	Include /path/to/bookings/.httpd.conf.extract.txt
+#	Use MacroBookingsSystem /bookings
+
+
+<Macro MacroBookingsSystem $applicationBaseUrl>
 	
 	php_admin_value max_input_vars 2500
 	
-	Use MacroFrontControllerApplication "$applicationBaseUrl/" "$title"
+	Use MacroFrontControllerApplication "$applicationBaseUrl/" "Bookings"
 	RewriteRule $applicationBaseUrl/request/([0-9]{8})/([^/]+)/ $applicationBaseUrl/index.html?action=request&date=$1&place=$2 [L]
 	RedirectMatch permanent ^$applicationBaseUrl/request/([0-9]{8})/([^/]+)$ $applicationBaseUrl/request/$1/$2/
 	RewriteRule $applicationBaseUrl/edit.html $applicationBaseUrl/index.html?action=edit [L]
