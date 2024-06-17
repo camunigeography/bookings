@@ -98,7 +98,7 @@ class bookings extends frontControllerApplication
 			CREATE TABLE IF NOT EXISTS `administrators` (
 			  `username` varchar(191) NOT NULL COMMENT 'Username' PRIMARY KEY,
 			  `editingStateRequests` varchar(255) DEFAULT NULL COMMENT 'State'
-			) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='System administrators';
+			) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='System administrators';
 			
 			CREATE TABLE IF NOT EXISTS `bookings` (
 			  `id` int(11) NOT NULL COMMENT 'Automatic key' AUTO_INCREMENT PRIMARY KEY,
@@ -107,7 +107,7 @@ class bookings extends frontControllerApplication
 			  `slot` varchar(255) NOT NULL COMMENT 'Place slot',
 			  `bookingFor` varchar(255) DEFAULT NULL COMMENT 'Value',
 			  `approved` int(1) DEFAULT NULL COMMENT 'Approved?'
-			) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bookings';
+			) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Bookings';
 			
 			/*
 				This is an *example* requests table; the specific fields required will be dependent on the installation.
@@ -141,7 +141,7 @@ class bookings extends frontControllerApplication
 		--	  `internalVisitContentOther` text COMMENT 'Visit content (detail for other)',
 		--	  `internalPhoneCallLog` text COMMENT 'Phone call log',
 			  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatic timestamp'
-			) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Table of requests';
+			) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Table of requests';
 			
 			CREATE TABLE IF NOT EXISTS `settings` (
 			  `id` int(11) NOT NULL COMMENT 'Automatic key (ignored)' AUTO_INCREMENT PRIMARY KEY,
@@ -162,7 +162,7 @@ class bookings extends frontControllerApplication
 			  `bookingPageTextHtml` text COMMENT 'Booking page introductory text',
 			  `agreementText` VARCHAR(255) NULL DEFAULT NULL COMMENT 'Agreement tickbox text at end (if any)',
 			  `awayMessage` VARCHAR(255) NULL COMMENT 'Away message'
-			) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Settings';
+			) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Settings';
 		";
 	}
 	
