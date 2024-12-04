@@ -69,6 +69,13 @@ class bookings extends frontControllerApplication
 				'administrator' => true,
 				'icon' => 'application_double',
 			),
+			'calendar' => array (
+				'description' => 'Calendar',
+				'url' => 'calendar/',
+				'tab' => 'Calendar',
+				'administrator' => true,
+				'icon' => 'date',
+			),
 			'export' => array (
 				'description' => 'iCal feed - add listing to your calendar application',
 				'url' => 'export.html',
@@ -998,6 +1005,76 @@ class bookings extends frontControllerApplication
 		
 		# Delegate to the standard function for editing
 		echo $this->editingTable (__FUNCTION__, $dataBindingAttributes, 'ultimateform bookingform', $this->action, $sinenomineExtraSettings);
+	}
+	
+	
+	# Calendar page - upcoming confirmed bookings
+	public function calendar ()
+	{
+		# Start the HTML
+		$html  = "\n" . '<p class="actions right"><a href="' . $this->baseUrl . '/export.html"><img src="/images/icons/time_go.png" alt=""> Calendar feed</a></p>';
+		$html .= "\n" . '<p>The calendar shows the upcoming bookings at a glance.</p>';
+		$html .= "\n" . '<p>You can add/update notes directly (and press the submit button at the start/end when done).</p><br />';
+		
+		# Get the forthcoming bookings
+		$bookings = $this->getForthcomingBookings ();
+		
+		# Construct the table
+		$table = array ();
+		foreach ($bookings as $booking) {
+			$table[] = array (
+				'#'					=> "<a href=\"{$this->baseUrl}/requests/{$booking['id']}/edit.html\" target=\"_blank\">" . $booking['id'] . '</a>',
+				'Date'				=> date ('jS M', strtotime ($booking['date'] . ' 12:00:00')) . '<br />' . $booking['place'],
+				'Booking for'		=> htmlspecialchars ($booking['bookingFor']),
+				'Contact'			=> htmlspecialchars ($booking['name']) . '<br />' . htmlspecialchars ($booking['telephone']) . '<br /><p class="small">' . htmlspecialchars ($booking['email']) . '</p>',
+				'Participants'		=> $booking['participants'] . '<br />' . $booking['ageGroups'],
+				'Content'			=> application::htmlUl (explode (',', htmlspecialchars ($booking['internalVisitContent'])), 0, 'lightlyspaced'),
+				'Notes (internal)'	=> '{internalPhoneCallLog_' . $booking['id'] . '}',
+			);
+		}
+		
+		# Render to table for use in a form template
+		$listingTableTemplate = application::htmlTable ($table, array (), 'graybox', $keyAsFirstColumn = false, false, $allowHtml = true);
+		
+		# Create the form
+		$form = new form (array (
+			'display'		=> 'template',
+			'displayTemplate' => '{[[PROBLEMS]]}<p>{[[SUBMIT]]}</p>' . $listingTableTemplate . '<p>{[[SUBMIT]]}</p>',
+			'unsavedDataProtection' => true,
+			'reappear' => true,
+			'formCompleteText' => false,
+			'div' => false,
+		));
+		foreach ($bookings as $booking) {
+			$form->textarea (array (
+				'name'	=> 'internalPhoneCallLog_' . $booking['id'],
+				'title'	=> false,
+				'required' => false,
+				'default' => $booking['internalPhoneCallLog'],
+			));
+		}
+		if ($result = $form->process ($html)) {
+			
+			# Assemble updates
+			$updates = array ();
+			foreach ($result as $key => $value) {
+				list ($field, $id) = explode ('_', $key);
+				$updates[$id] = array (
+					$field => $value
+				);
+			}
+			
+			# Update the data
+			if (!$this->databaseConnection->updateMany ($this->settings['database'], 'requests', $updates)) {
+				application::dumpData ($this->databaseConnection->error ());
+			}
+			
+			# Refresh the page
+			application::sendHeader ('refresh');
+		}
+		
+		# Show the HTML
+		echo $html;
 	}
 	
 	
