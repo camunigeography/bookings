@@ -1024,19 +1024,8 @@ class bookings extends frontControllerApplication
 			return $this->page404 ();
 		}
 		
-		# Get the bookings data
-		$query = "SELECT
-			*
-			FROM {$this->settings['database']}.requests
-			WHERE
-				approved = 'Approved'
-				" . (strlen ($this->settings['icalMonthsBack']) ? " AND `date` >= DATE_SUB(NOW(), INTERVAL {$this->settings['icalMonthsBack']} MONTH) " : '') . "
-			ORDER BY `date`,place
-		;";
-		$bookings = $this->databaseConnection->getData ($query, "{$this->settings['database']}.requests");
-		
-		# Split records with multiple place slots (e.g. 'morning,afternoon') into multiple records
-		$bookings = $this->databaseConnection->splitSetToMultipleRecords ($bookings, 'place');
+		# Get the forthcoming bookings
+		$bookings = $this->getForthcomingBookings ();
 		
 		# Compile the data
 		$literalNewline = '\n';	// ical needs to see \n as text, not newlines; see http://stackoverflow.com/questions/666929/encoding-newlines-in-ical-files
@@ -1066,6 +1055,28 @@ class bookings extends frontControllerApplication
 		# Delegate to iCal class
 		$ical = new ical ();
 		echo $ical->create ($events, application::pluralise ($this->settings['applicationName']), 'University of Cambridge - Departmental code', $this->settings['applicationName']);
+	}
+	
+	
+	# Function to get forthcoming bookings
+	private function getForthcomingBookings ()
+	{
+		# Get the bookings data
+		$query = "SELECT
+			*
+			FROM {$this->settings['database']}.requests
+			WHERE
+				approved = 'Approved'
+				" . (strlen ($this->settings['icalMonthsBack']) ? " AND `date` >= DATE_SUB(NOW(), INTERVAL {$this->settings['icalMonthsBack']} MONTH) " : '') . "
+			ORDER BY `date`,place
+		;";
+		$bookings = $this->databaseConnection->getData ($query, "{$this->settings['database']}.requests");
+		
+		# Split records with multiple place slots (e.g. 'morning,afternoon') into multiple records
+		$bookings = $this->databaseConnection->splitSetToMultipleRecords ($bookings, 'place');
+		
+		# Return the bookings
+		return $bookings;
 	}
 }
 
