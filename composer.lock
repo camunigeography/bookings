@@ -206,16 +206,16 @@
         },
         {
             "name": "libpurecontent/frontcontrollerapplication",
-            "version": "v1.13.3",
+            "version": "v1.13.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/libpurecontent/frontcontrollerapplication.git",
-                "reference": "5458fb9d59d9c854d3b9ff4ecae8b1c2c3a0cf41"
+                "reference": "9033b4e8a9bd279a430eb4831137586ab64db975"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/libpurecontent/frontcontrollerapplication/zipball/5458fb9d59d9c854d3b9ff4ecae8b1c2c3a0cf41",
-                "reference": "5458fb9d59d9c854d3b9ff4ecae8b1c2c3a0cf41",
+                "url": "https://api.github.com/repos/libpurecontent/frontcontrollerapplication/zipball/9033b4e8a9bd279a430eb4831137586ab64db975",
+                "reference": "9033b4e8a9bd279a430eb4831137586ab64db975",
                 "shasum": ""
             },
             "require": {
@@ -246,9 +246,9 @@
             "description": "PHP library frontControllerApplication within the pureContent library suite",
             "support": {
                 "issues": "https://github.com/libpurecontent/frontcontrollerapplication/issues",
-                "source": "https://github.com/libpurecontent/frontcontrollerapplication/tree/v1.13.3"
+                "source": "https://github.com/libpurecontent/frontcontrollerapplication/tree/v1.13.5"
             },
-            "time": "2024-03-04T12:03:29+00:00"
+            "time": "2024-04-18T14:45:15+00:00"
         },
         {
             "name": "libpurecontent/ical",
