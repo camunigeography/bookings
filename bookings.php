@@ -405,13 +405,13 @@ class bookings extends frontControllerApplication
 		
 		# Introductory text
 		if ($this->userIsAdministrator) {
-			$html .= "\n" . '<p class="actions right"><a href="' . $this->baseUrl . '/settings.html#form_introductoryTextHtml"><img src="/images/icons/pencil.png" alt=""> Edit text</a></p>';
+			$html .= "\n" . '<p class="actions right"><a href="' . $this->baseUrl . '/settings.html#form_introductoryTextHtml"><img src="/images/icons/pencil.png" alt="" /> Edit text</a></p>';
 		}
 		$html .= $this->settings['introductoryTextHtml'];
 		
 		# Button and introduction for admins
 		if ($this->userIsAdministrator) {
-			$html .= "\n" . '<p class="actions right"><a href="' . $this->baseUrl . '/edit.html"><img src="/images/icons/pencil.png" alt=""> Edit</a></p>';
+			$html .= "\n" . '<p class="actions right"><a href="' . $this->baseUrl . '/edit.html"><img src="/images/icons/pencil.png" alt="" /> Edit</a></p>';
 			$html .= "\n" . '<p><img src="/images/icons/asterisk_yellow.png" alt="Info" class="icon" /> As an Administrator, you can hover the mouse over any booked slot to see details.</p>';
 		}
 		
@@ -1018,6 +1018,13 @@ class bookings extends frontControllerApplication
 		
 		# Get the forthcoming bookings
 		$bookings = $this->getCalendarBookings (true);
+		
+		# End if none
+		if (!$bookings) {
+			$html .= "\n<p>There are no bookings at present.</p>";
+			echo $html;
+			return true;
+		}
 		
 		# Construct the table
 		$table = array ();
