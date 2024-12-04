@@ -158,6 +158,7 @@ class bookings extends frontControllerApplication
 			  `placeSlots` text NOT NULL COMMENT 'Slots per place title',
 			  `placeTimePeriods` text NOT NULL COMMENT 'Place time periods (as comma-separated pairs), used for iCal calendar feed',
 			  `icalMonthsBack` INT(11) NULL DEFAULT NULL COMMENT 'How many months back should the iCal feed start from? (Leave blank to show everything.)',
+			  `icalKey` VARCHAR(16) NOT NULL COMMENT 'iCal key',
 			  `introductoryTextHtml` text COMMENT 'Introductory text',
 			  `bookingPageTextHtml` text COMMENT 'Booking page introductory text',
 			  `agreementText` VARCHAR(255) NULL DEFAULT NULL COMMENT 'Agreement tickbox text at end (if any)',
@@ -1004,7 +1005,7 @@ class bookings extends frontControllerApplication
 	public function export ()
 	{
 		# Define the location of the ICS file
-		$icsFile = $this->baseUrl . '/' . $this->actions['ical']['url'];
+		$icsFile = $this->baseUrl . '/' . $this->actions['ical']['url'] . '?key=' . $this->settings['icalKey'];
 		
 		# Delegate to iCal class
 		$ical = new ical ();
@@ -1018,6 +1019,11 @@ class bookings extends frontControllerApplication
 	# iCal export
 	public function ical ()
 	{
+		# Validate the key
+		if (!isSet ($_GET['key']) || ($_GET['key'] != $this->settings['icalKey'])) {
+			return $this->page404 ();
+		}
+		
 		# Get the bookings data
 		$query = "SELECT
 			*
