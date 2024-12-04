@@ -1017,7 +1017,7 @@ class bookings extends frontControllerApplication
 		$html .= "\n" . '<p>You can add/update notes directly (and press the submit button at the start/end when done).</p><br />';
 		
 		# Get the forthcoming bookings
-		$bookings = $this->getForthcomingBookings ();
+		$bookings = $this->getCalendarBookings (true);
 		
 		# Construct the table
 		$table = array ();
@@ -1102,7 +1102,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Get the forthcoming bookings
-		$bookings = $this->getForthcomingBookings ();
+		$bookings = $this->getCalendarBookings ();
 		
 		# Compile the data
 		$literalNewline = '\n';	// ical needs to see \n as text, not newlines; see http://stackoverflow.com/questions/666929/encoding-newlines-in-ical-files
@@ -1135,16 +1135,24 @@ class bookings extends frontControllerApplication
 	}
 	
 	
-	# Function to get forthcoming bookings
-	private function getForthcomingBookings ()
+	# Function to get bookings for display in the calendar
+	private function getCalendarBookings ($forthcomingOnly = false)
 	{
+		# Date limitation
+		$dateLimitSql = '';
+		if ($forthcomingOnly) {
+			$dateLimitSql = ' AND `date` >= NOW() ';
+		} else if (strlen ($this->settings['icalMonthsBack'])) {
+			$dateLimitSql = " AND `date` >= DATE_SUB(NOW(), INTERVAL {$this->settings['icalMonthsBack']} MONTH) ";
+		}
+		
 		# Get the bookings data
 		$query = "SELECT
 			*
 			FROM {$this->settings['database']}.requests
 			WHERE
 				approved = 'Approved'
-				" . (strlen ($this->settings['icalMonthsBack']) ? " AND `date` >= DATE_SUB(NOW(), INTERVAL {$this->settings['icalMonthsBack']} MONTH) " : '') . "
+				" . $dateLimitSql . "
 			ORDER BY `date`,place
 		;";
 		$bookings = $this->databaseConnection->getData ($query, "{$this->settings['database']}.requests");
