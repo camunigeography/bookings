@@ -6,20 +6,20 @@
 #	Use MacroBookingsSystem /bookings
 
 
-<Macro MacroBookingsSystem $applicationBaseUrl>
+<Macro MacroBookingsSystem $baseUrl>
 	
 	php_admin_value max_input_vars 2500
 	
-	Use MacroFrontControllerApplication "$applicationBaseUrl/" "Bookings"
-	RewriteRule $applicationBaseUrl/request/([0-9]{8})/([^/]+)/ $applicationBaseUrl/index.html?action=request&date=$1&place=$2 [L]
-	RedirectMatch permanent ^$applicationBaseUrl/request/([0-9]{8})/([^/]+)$ $applicationBaseUrl/request/$1/$2/
-	RewriteRule $applicationBaseUrl/edit.html $applicationBaseUrl/index.html?action=edit [L]
-	RewriteRule $applicationBaseUrl/export.html $applicationBaseUrl/index.html?action=export [L]
+	Use MacroFrontControllerApplication "$baseUrl/" "Bookings"
+	RewriteRule ^$baseUrl/request/([0-9]{8})/([^/]+)/ $baseUrl/index.html?action=request&date=$1&place=$2 [L]
+	RedirectMatch Permanent ^$baseUrl/request/([0-9]{8})/([^/]+)$ $baseUrl/request/$1/$2/
+	RewriteRule ^$baseUrl/edit.html $baseUrl/index.html?action=edit [L]
+	RewriteRule ^$baseUrl/export.html $baseUrl/index.html?action=export [L]
 	
-	Use MacroSinenomineEmbeddedTable "$applicationBaseUrl" "/requests" "requests"
+	Use MacroSinenomineEmbeddedTable "$baseUrl" "/requests" "requests"
 	
 	# Disable all kinds of access restriction on export files (as calendars cannot do Raven authentication)
-	RewriteRule ^$applicationBaseUrl/bookings.ics$ $applicationBaseUrl/index.html?action=ical [L,QSA]
+	RewriteRule ^$baseUrl/bookings.ics$ $baseUrl/index.html?action=ical [L,QSA]
 	<LocationMatch "\.ics$">
 		Require all granted
 		php_value auto_prepend_file none
