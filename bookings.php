@@ -1030,7 +1030,9 @@ class bookings extends frontControllerApplication
 		# Construct the table
 		$table = array ();
 		foreach ($bookings as $booking) {
-			$table[] = array (
+			$rowClass = 'booking' . $booking['id'];
+			if ($booking['date'] < date ('Y-m-d')) {$rowClass .= ' previous';}
+			$table[$rowClass] = array (
 				'#'					=> "<a href=\"{$this->baseUrl}/requests/{$booking['id']}/edit.html\" target=\"_blank\">" . $booking['id'] . '</a>',
 				'Date'				=> date ('jS M', strtotime ($booking['date'] . ' 12:00:00')) . '<br />' . $booking['place'],
 				'Booking for'		=> htmlspecialchars ($booking['bookingFor']),
@@ -1042,7 +1044,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Render to table for use in a form template
-		$listingTableTemplate = application::htmlTable ($table, array (), 'graybox', $keyAsFirstColumn = false, false, $allowHtml = true);
+		$listingTableTemplate = application::htmlTable ($table, array (), 'graybox calendar', $keyAsFirstColumn = false, false, $allowHtml = true, false, false, $addRowKeyClasses = true);
 		
 		# Create the form
 		$form = new form (array (
