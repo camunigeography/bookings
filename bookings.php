@@ -1112,7 +1112,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Get the forthcoming bookings
-		$bookings = $this->getCalendarBookings ('icalWeeksBack');
+		$bookings = $this->getCalendarBookings ('icalWeeksBack', $splitMultiple = true);
 		
 		# Compile the data
 		$literalNewline = '\n';	// ical needs to see \n as text, not newlines; see http://stackoverflow.com/questions/666929/encoding-newlines-in-ical-files
@@ -1146,7 +1146,7 @@ class bookings extends frontControllerApplication
 	
 	
 	# Function to get bookings for display in the calendar
-	private function getCalendarBookings ($weeksBackSetting)
+	private function getCalendarBookings ($weeksBackSetting, $splitMultiple = false)
 	{
 		# Date limitation
 		$dateLimitSql = '';
@@ -1161,12 +1161,14 @@ class bookings extends frontControllerApplication
 			WHERE
 				approved = 'Approved'
 				" . $dateLimitSql . "
-			ORDER BY `date`,place
+			ORDER BY `date`, place
 		;";
 		$bookings = $this->databaseConnection->getData ($query, "{$this->settings['database']}.requests");
 		
-		# Split records with multiple place slots (e.g. 'morning,afternoon') into multiple records
-		$bookings = $this->databaseConnection->splitSetToMultipleRecords ($bookings, 'place');
+		# Split records with multiple place slots (e.g. 'morning,afternoon') into multiple records, if required (useful for iCal but not calendar view)
+		if ($splitMultiple) {
+			$bookings = $this->databaseConnection->splitSetToMultipleRecords ($bookings, 'place');
+		}
 		
 		# Return the bookings
 		return $bookings;
