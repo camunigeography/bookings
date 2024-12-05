@@ -164,6 +164,7 @@ class bookings extends frontControllerApplication
 			  `placeLabelsAbbreviated` text NOT NULL COMMENT 'Place labels (abbreviated)',
 			  `placeSlots` text NOT NULL COMMENT 'Slots per place title',
 			  `placeTimePeriods` text NOT NULL COMMENT 'Place time periods (as comma-separated pairs), used for iCal calendar feed',
+			  `calendarWeeksBack` INT(11) NULL COMMENT 'How many weeks back should the calendar page start from? (Leave blank to be the current date.)',
 			  `icalWeeksBack` INT(11) NULL DEFAULT NULL COMMENT 'How many weeks back should the iCal feed start from? (Leave blank to show everything.)',
 			  `icalKey` VARCHAR(16) NOT NULL COMMENT 'iCal key',
 			  `introductoryTextHtml` text COMMENT 'Introductory text',
@@ -221,7 +222,7 @@ class bookings extends frontControllerApplication
 				'listMonthsAheadPublic'	=> array ('heading' => array (3 => 'Listings of bookable places')),
 				'weeksEarliestDate'		=> array ('picker' => true),
 				'places'				=> array ('heading' => array (3 => 'Places')),
-				'icalWeeksBack'			=> array ('heading' => array (3 => 'Calendar feed')),
+				'calendarWeeksBack'		=> array ('heading' => array (3 => 'Calendar feed')),
 				'introductoryTextHtml'	=> array ('heading' => array (3 => 'Notice/message texts')),
 				'agreementText'			=> array ('size' => 80),
 				'awayMessage'			=> array ('size' => 80),
@@ -1017,7 +1018,7 @@ class bookings extends frontControllerApplication
 		$html .= "\n" . '<p>You can add/update notes directly (and press the submit button at the start/end when done).</p><br />';
 		
 		# Get the forthcoming bookings
-		$bookings = $this->getCalendarBookings (true);
+		$bookings = $this->getCalendarBookings ('calendarWeeksBack');
 		
 		# End if none
 		if (!$bookings) {
@@ -1109,7 +1110,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Get the forthcoming bookings
-		$bookings = $this->getCalendarBookings ();
+		$bookings = $this->getCalendarBookings ('icalWeeksBack');
 		
 		# Compile the data
 		$literalNewline = '\n';	// ical needs to see \n as text, not newlines; see http://stackoverflow.com/questions/666929/encoding-newlines-in-ical-files
@@ -1143,14 +1144,12 @@ class bookings extends frontControllerApplication
 	
 	
 	# Function to get bookings for display in the calendar
-	private function getCalendarBookings ($forthcomingOnly = false)
+	private function getCalendarBookings ($weeksBackSetting)
 	{
 		# Date limitation
 		$dateLimitSql = '';
-		if ($forthcomingOnly) {
-			$dateLimitSql = ' AND `date` >= NOW() ';
-		} else if (strlen ($this->settings['icalWeeksBack'])) {
-			$dateLimitSql = " AND `date` >= DATE_SUB(NOW(), INTERVAL {$this->settings['icalWeeksBack']} WEEK) ";
+		if (strlen ($this->settings[$weeksBackSetting])) {
+			$dateLimitSql = " AND `date` >= DATE_SUB(CURDATE(), INTERVAL {$this->settings[$weeksBackSetting]} WEEK) ";
 		}
 		
 		# Get the bookings data
