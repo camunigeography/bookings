@@ -164,7 +164,7 @@ class bookings extends frontControllerApplication
 			  `placeLabelsAbbreviated` text NOT NULL COMMENT 'Place labels (abbreviated)',
 			  `placeSlots` text NOT NULL COMMENT 'Slots per place title',
 			  `placeTimePeriods` text NOT NULL COMMENT 'Place time periods (as comma-separated pairs), used for iCal calendar feed',
-			  `icalMonthsBack` INT(11) NULL DEFAULT NULL COMMENT 'How many months back should the iCal feed start from? (Leave blank to show everything.)',
+			  `icalWeeksBack` INT(11) NULL DEFAULT NULL COMMENT 'How many weeks back should the iCal feed start from? (Leave blank to show everything.)',
 			  `icalKey` VARCHAR(16) NOT NULL COMMENT 'iCal key',
 			  `introductoryTextHtml` text COMMENT 'Introductory text',
 			  `bookingPageTextHtml` text COMMENT 'Booking page introductory text',
@@ -221,7 +221,7 @@ class bookings extends frontControllerApplication
 				'listMonthsAheadPublic'	=> array ('heading' => array (3 => 'Listings of bookable places')),
 				'weeksEarliestDate'		=> array ('picker' => true),
 				'places'				=> array ('heading' => array (3 => 'Places')),
-				'icalMonthsBack'		=> array ('heading' => array (3 => 'Calendar feed')),
+				'icalWeeksBack'			=> array ('heading' => array (3 => 'Calendar feed')),
 				'introductoryTextHtml'	=> array ('heading' => array (3 => 'Notice/message texts')),
 				'agreementText'			=> array ('size' => 80),
 				'awayMessage'			=> array ('size' => 80),
@@ -1149,8 +1149,8 @@ class bookings extends frontControllerApplication
 		$dateLimitSql = '';
 		if ($forthcomingOnly) {
 			$dateLimitSql = ' AND `date` >= NOW() ';
-		} else if (strlen ($this->settings['icalMonthsBack'])) {
-			$dateLimitSql = " AND `date` >= DATE_SUB(NOW(), INTERVAL {$this->settings['icalMonthsBack']} MONTH) ";
+		} else if (strlen ($this->settings['icalWeeksBack'])) {
+			$dateLimitSql = " AND `date` >= DATE_SUB(NOW(), INTERVAL {$this->settings['icalWeeksBack']} WEEK) ";
 		}
 		
 		# Get the bookings data
