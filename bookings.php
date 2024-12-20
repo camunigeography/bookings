@@ -542,7 +542,7 @@ class bookings extends frontControllerApplication
 			}
 			
 			# Get the formatted date and set this as the first column
-			$table[$key]['date'] = date ('l, jS F Y', strtotime ($date));
+			$table[$key]['date'] = '<span data-date="' . date ('Y-m-d', strtotime ($date)) . '">' . date ('l, jS F Y', strtotime ($date)) . '</span>';
 			if ($this->settings['period'] == 'weeks') {
 				$table[$key]['date'] = 'Week beginning <br />' . $table[$key]['date'];
 			}
@@ -567,7 +567,7 @@ class bookings extends frontControllerApplication
 						$booking = ($isBooked ? $bookedSlotsData[$date][$place]['approved'][$slot][0] : false);
 						
 						# Set the default cell value
-						$table[$key][$column] = '<span class="booked" title="' . htmlspecialchars ($booking['bookingFor']) . '">Booked</span>';
+						$table[$key][$column] = '<span class="booked"' . ($this->userIsAdministrator ? ' title="' . htmlspecialchars ($booking['bookingFor']) . '"' : '') . '>Booked</span>';
 						
 						# If the user is edit mode (and therefore an Administrator), instead give more details
 						if ($editMode) {
@@ -613,7 +613,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Compile as HTML
-		$html = application::htmlTable ($table, $placeTitles, 'lines bookingslist', $keyAsFirstColumn = false, $uppercaseHeadings = true, $allowHtml = true, $showColons = true, false, $addRowKeyClasses = true);
+		$html = application::htmlTable ($table, $placeTitles, 'lines bookingslist', $keyAsFirstColumn = false, $uppercaseHeadings = true, $allowHtml = true, $showColons = true, $addCellClasses = true, $addRowKeyClasses = true);
 		
 		# Return the HTML
 		return $html;
