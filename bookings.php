@@ -417,7 +417,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Show the table
-		$html .= $this->listingTable ();
+		$html .= $this->createListing ();
 		
 		# Show the HTML
 		echo $html;
@@ -434,7 +434,7 @@ class bookings extends frontControllerApplication
 		$html .= "\n" . '<p class="actions right"><a href="' . $this->baseUrl . '/"><img src="/images/icons/cross.png" alt=""> Cancel editing</a></p>';
 		
 		# Assemble the listing template
-		$listingTableTemplate = $this->listingTable ($editMode = true, $formElements);
+		$listingTableTemplate = $this->createListing ($calendarRendering = false, $editMode = true, $formElements);
 		
 		# Create a form
 		$form = new form (array (
@@ -502,8 +502,8 @@ class bookings extends frontControllerApplication
 	}
 	
 	
-	# Function to generate the listing table
-	private function listingTable ($editMode = false, &$formElements = array ())
+	# Function to generate the listing calendar/table
+	private function createListing ($calendarRendering = true, $editMode = false, &$formElements = array ())
 	{
 		# Begin the HTML
 		$html = '';
@@ -523,9 +523,9 @@ class bookings extends frontControllerApplication
 		$firstDayOfWeekInSettings = $weekdays[0];
 		
 		# Assemble the data for a table, looping through the dates, so that all are shown, irrespective of whether a booking is present
-		#!# This large block needs to be refactored, to split the data state determinations from the rendering
+		#!# This large block needs to be refactored, to split the data state determinations from the rendering; at present the available slots by date has to be intermingled as a result
 		$table = array ();
-		$availableSlots = false;
+		$availableSlotsByDate = array ();
 		foreach ($dates as $date) {
 			
 			# Set the key for this row, which will be used as the class for this row
@@ -603,7 +603,7 @@ class bookings extends frontControllerApplication
 					}
 					
 					# For available slots in view mode, create a link
-					$availableSlots = true;
+					$availableSlotsByDate[$date][$placeAttributes['label']] = $linkUrl;		// E.g. 'Morning' => '/bookings/request/20251124/morning/'
 					$table[$key][$column] = "<a rel=\"nofollow\" href=\"{$linkUrl}\">Available</a>";
 				}
 			}
@@ -619,7 +619,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# State if no dates currently available
-		if (!$availableSlots) {
+		if (!$availableSlotsByDate) {
 			$html .= "\n" . '<p class="warning"><strong>We regret that there are currently no slots available - please check back later.</strong></p>';
 		}
 		
@@ -628,8 +628,12 @@ class bookings extends frontControllerApplication
 			$html .= "\n" . '<p><img src="/images/icons/asterisk_yellow.png" alt="Info" class="icon" /> Dates from ' . date ('jS F, Y', strtotime ($this->firstPrivateDate)) . ' are not yet public, but are shown to you below as an administrator.</p>';
 		}
 		
-		# Compile as HTML
-		$html .= application::htmlTable ($table, $placeTitles, 'lines bookingslist', $keyAsFirstColumn = false, $uppercaseHeadings = true, $allowHtml = true, $showColons = true, $addCellClasses = true, $addRowKeyClasses = true);
+		# Render as calendar or table
+		if ($calendarRendering) {
+			$html .= timedate::calendar ($dates, $availableSlotsByDate);
+		} else {
+			$html .= application::htmlTable ($table, $placeTitles, 'lines bookingslist', $keyAsFirstColumn = false, $uppercaseHeadings = true, $allowHtml = true, $showColons = true, $addCellClasses = true, $addRowKeyClasses = true);
+		}
 		
 		# Return the HTML
 		return $html;

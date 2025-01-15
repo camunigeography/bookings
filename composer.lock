@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bd2b295156039173f9617bddfdf961a2",
+    "content-hash": "d88a2b331cae47de355f34caa51f962b",
     "packages": [
         {
             "name": "camunigeography/camunidata",
@@ -410,16 +410,16 @@
         },
         {
             "name": "libpurecontent/timedate",
-            "version": "v1.3.0",
+            "version": "v1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/libpurecontent/timedate.git",
-                "reference": "7560395e0f4ba6ed283f7f77508c9c36229d9e70"
+                "reference": "ab7f6c87fc28d9672291db63601d86e06de2fad6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/libpurecontent/timedate/zipball/7560395e0f4ba6ed283f7f77508c9c36229d9e70",
-                "reference": "7560395e0f4ba6ed283f7f77508c9c36229d9e70",
+                "url": "https://api.github.com/repos/libpurecontent/timedate/zipball/ab7f6c87fc28d9672291db63601d86e06de2fad6",
+                "reference": "ab7f6c87fc28d9672291db63601d86e06de2fad6",
                 "shasum": ""
             },
             "type": "library",
@@ -440,9 +440,9 @@
             "description": "PHP library timedate within the pureContent library suite",
             "support": {
                 "issues": "https://github.com/libpurecontent/timedate/issues",
-                "source": "https://github.com/libpurecontent/timedate/tree/v1.3.0"
+                "source": "https://github.com/libpurecontent/timedate/tree/v1.4.0"
             },
-            "time": "2024-01-15T17:06:17+00:00"
+            "time": "2025-01-15T13:21:58+00:00"
         },
         {
             "name": "libpurecontent/ultimateform",
