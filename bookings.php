@@ -623,6 +623,11 @@ class bookings extends frontControllerApplication
 			$html .= "\n" . '<p class="warning"><strong>We regret that there are currently no slots available - please check back later.</strong></p>';
 		}
 		
+		# Show administrator note for dates ahead
+		if ($this->userIsAdministrator && $this->firstPrivateDate) {
+			$html .= "\n" . '<p><img src="/images/icons/asterisk_yellow.png" alt="Info" class="icon" /> Dates from ' . date ('jS F, Y', strtotime ($this->firstPrivateDate)) . ' are not yet public, but are shown to you below as an administrator.</p>';
+		}
+		
 		# Compile as HTML
 		$html .= application::htmlTable ($table, $placeTitles, 'lines bookingslist', $keyAsFirstColumn = false, $uppercaseHeadings = true, $allowHtml = true, $showColons = true, $addCellClasses = true, $addRowKeyClasses = true);
 		
