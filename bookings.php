@@ -505,6 +505,9 @@ class bookings extends frontControllerApplication
 	# Function to generate the listing table
 	private function listingTable ($editMode = false, &$formElements = array ())
 	{
+		# Begin the HTML
+		$html = '';
+		
 		# Get the dates; in edit mode, reload the dates, but from the current date (rather than a week ahead)
 		if ($editMode) {
 			$dates = $this->getDates (true, $editMode);
@@ -522,6 +525,7 @@ class bookings extends frontControllerApplication
 		# Assemble the data for a table, looping through the dates, so that all are shown, irrespective of whether a booking is present
 		#!# This large block needs to be refactored, to split the data state determinations from the rendering
 		$table = array ();
+		$availableSlots = false;
 		foreach ($dates as $date) {
 			
 			# Set the key for this row, which will be used as the class for this row
@@ -599,6 +603,7 @@ class bookings extends frontControllerApplication
 					}
 					
 					# For available slots in view mode, create a link
+					$availableSlots = true;
 					$table[$key][$column] = "<a rel=\"nofollow\" href=\"{$linkUrl}\">Available</a>";
 				}
 			}
@@ -613,8 +618,13 @@ class bookings extends frontControllerApplication
 			}
 		}
 		
+		# State if no dates currently available
+		if (!$availableSlots) {
+			$html .= "\n" . '<p class="warning"><strong>We regret that there are currently no slots available - please check back later.</strong></p>';
+		}
+		
 		# Compile as HTML
-		$html = application::htmlTable ($table, $placeTitles, 'lines bookingslist', $keyAsFirstColumn = false, $uppercaseHeadings = true, $allowHtml = true, $showColons = true, $addCellClasses = true, $addRowKeyClasses = true);
+		$html .= application::htmlTable ($table, $placeTitles, 'lines bookingslist', $keyAsFirstColumn = false, $uppercaseHeadings = true, $allowHtml = true, $showColons = true, $addCellClasses = true, $addRowKeyClasses = true);
 		
 		# Return the HTML
 		return $html;
