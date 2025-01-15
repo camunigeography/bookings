@@ -503,7 +503,7 @@ class bookings extends frontControllerApplication
 	
 	
 	# Function to generate the listing table
-	public function listingTable ($editMode = false, &$formElements = array ())
+	private function listingTable ($editMode = false, &$formElements = array ())
 	{
 		# Get the dates; in edit mode, reload the dates, but from the current date (rather than a week ahead)
 		if ($editMode) {
@@ -520,6 +520,7 @@ class bookings extends frontControllerApplication
 		$firstDayOfWeekInSettings = $weekdays[0];
 		
 		# Assemble the data for a table, looping through the dates, so that all are shown, irrespective of whether a booking is present
+		#!# This large block needs to be refactored, to split the data state determinations from the rendering
 		$table = array ();
 		foreach ($dates as $date) {
 			
