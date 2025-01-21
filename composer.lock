@@ -410,16 +410,16 @@
         },
         {
             "name": "libpurecontent/timedate",
-            "version": "v1.4.0",
+            "version": "v1.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/libpurecontent/timedate.git",
-                "reference": "ab7f6c87fc28d9672291db63601d86e06de2fad6"
+                "reference": "a7da0b3ad68a5b8ce7556b3051cfcb7628b87535"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/libpurecontent/timedate/zipball/ab7f6c87fc28d9672291db63601d86e06de2fad6",
-                "reference": "ab7f6c87fc28d9672291db63601d86e06de2fad6",
+                "url": "https://api.github.com/repos/libpurecontent/timedate/zipball/a7da0b3ad68a5b8ce7556b3051cfcb7628b87535",
+                "reference": "a7da0b3ad68a5b8ce7556b3051cfcb7628b87535",
                 "shasum": ""
             },
             "type": "library",
@@ -440,9 +440,9 @@
             "description": "PHP library timedate within the pureContent library suite",
             "support": {
                 "issues": "https://github.com/libpurecontent/timedate/issues",
-                "source": "https://github.com/libpurecontent/timedate/tree/v1.4.0"
+                "source": "https://github.com/libpurecontent/timedate/tree/v1.4.1"
             },
-            "time": "2025-01-15T13:21:58+00:00"
+            "time": "2025-01-21T16:31:43+00:00"
         },
         {
             "name": "libpurecontent/ultimateform",

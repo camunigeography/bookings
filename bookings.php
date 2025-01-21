@@ -526,6 +526,7 @@ class bookings extends frontControllerApplication
 		#!# This large block needs to be refactored, to split the data state determinations from the rendering; at present the available slots by date has to be intermingled as a result
 		$table = array ();
 		$availableSlotsByDate = array ();
+		$hoverTexts = array ();
 		foreach ($dates as $date) {
 			
 			# Set the key for this row, which will be used as the class for this row
@@ -573,6 +574,7 @@ class bookings extends frontControllerApplication
 						
 						# Set the default cell value
 						$table[$key][$column] = '<span class="booked"' . ($this->userIsAdministrator ? ' title="' . htmlspecialchars ($booking['bookingFor']) . '"' : '') . '>Booked</span>';
+						$hoverTexts[$date][$placeAttributes['label']] = $booking['bookingFor'];
 						
 						# If the user is edit mode (and therefore an Administrator), instead give more details
 						if ($editMode) {
@@ -609,6 +611,16 @@ class bookings extends frontControllerApplication
 			}
 		}
 		
+		# Compile hover texts by date
+		$hoverTextsHtml = array ();
+		foreach ($hoverTexts as $date => $slots) {
+			$slotsTexts = array ();
+			foreach ($slots as $label => $hoverText) {
+				$slotsTexts[] = htmlspecialchars ($label) . ': ' . htmlspecialchars ($hoverText);
+			}
+			$hoverTextsHtml[$date] = implode ('&#10;', $slotsTexts);
+		}
+		
 		# Determine the headings
 		$placeTitles = array ();
 		foreach ($this->places as $place => $placeAttributes) {
@@ -630,7 +642,7 @@ class bookings extends frontControllerApplication
 		
 		# Render as calendar or table
 		if ($calendarRendering) {
-			$html .= timedate::calendar ($dates, $availableSlotsByDate);
+			$html .= timedate::calendar ($dates, $availableSlotsByDate, $hoverTextsHtml);
 		} else {
 			$html .= application::htmlTable ($table, $placeTitles, 'lines bookingslist', $keyAsFirstColumn = false, $uppercaseHeadings = true, $allowHtml = true, $showColons = true, $addCellClasses = true, $addRowKeyClasses = true);
 		}
