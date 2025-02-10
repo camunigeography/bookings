@@ -152,6 +152,7 @@ class bookings extends frontControllerApplication
 			
 			CREATE TABLE IF NOT EXISTS `settings` (
 			  `id` int(11) NOT NULL COMMENT 'Automatic key (ignored)' AUTO_INCREMENT PRIMARY KEY,
+			  `applicationName` VARCHAR(255) NOT NULL DEFAULT 'Booking request' COMMENT 'Application name',
 			  `recipient` VARCHAR(255) NOT NULL COMMENT 'E-mail recipient',
 			  `listMonthsAheadPublic` int(2) NOT NULL DEFAULT '3' COMMENT 'How many months ahead to list (public)',
 			  `listMonthsAheadPrivate` int(2) NOT NULL DEFAULT '12' COMMENT 'How many months ahead to list (private)',
@@ -218,6 +219,7 @@ class bookings extends frontControllerApplication
 		# Define overrides
 		$dataBindingSettingsOverrides = array (
 			'attributes' => array (
+				'applicationName'		=> array ('heading' => array (3 => 'Title')),
 				'recipient'				=> array ('heading' => array (3 => 'Notifications')),
 				'listMonthsAheadPublic'	=> array ('heading' => array (3 => 'Listings of bookable places')),
 				'weeksEarliestDate'		=> array ('picker' => true),

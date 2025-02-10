@@ -5,8 +5,6 @@
 
 # Define settings for this installation
 $settings = array (
-	'applicationName' => 'Online booking request',
-	'hostname' => 'localhost',
 	'database' => 'bookings',
 	'password' => 'databasepasswordhere',
 	'serverAdministrator' => 'webmaster@example.com',
