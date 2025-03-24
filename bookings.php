@@ -326,7 +326,7 @@ class bookings extends frontControllerApplication
 		# Get any data for between these ranges
 		$query = "SELECT
 				id,date,place,slot,bookingFor,approved,1 AS reviewed,'manual' AS type
-			FROM {$this->settings['database']}.{$this->settings['table']}
+			FROM {$this->settings['database']}.bookings
 			WHERE
 				    `date` >= '{$firstDate}'
 				AND `date` <= '{$untilDate}'
@@ -476,15 +476,15 @@ class bookings extends frontControllerApplication
 					$data['bookingFor'] = $result[$field];
 					
 					# Insert/update the changes, or delete the record if no text
-					$existingRecord = $this->databaseConnection->selectOne ($this->settings['database'], $this->settings['table'], $where);
+					$existingRecord = $this->databaseConnection->selectOne ($this->settings['database'], 'bookings', $where);
 					if ($existingRecord) {
 						if (empty ($data['reservation'])) {
-							$this->databaseConnection->delete ($this->settings['database'], $this->settings['table'], array ('id' => $existingRecord['id']));
+							$this->databaseConnection->delete ($this->settings['database'], 'bookings', array ('id' => $existingRecord['id']));
 						} else {
-							$this->databaseConnection->update ($this->settings['database'], $this->settings['table'], $data, array ('id' => $existingRecord['id']));
+							$this->databaseConnection->update ($this->settings['database'], 'bookings', $data, array ('id' => $existingRecord['id']));
 						}
 					} else {
-						$this->databaseConnection->insert ($this->settings['database'], $this->settings['table'], $data, false);
+						$this->databaseConnection->insert ($this->settings['database'], 'bookings', $data, false);
 					}
 				}
 				
