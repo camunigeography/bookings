@@ -957,12 +957,6 @@ class bookings extends frontControllerApplication
 		$attributes['visitType'] = array (
 			'heading' => array (3 => 'Type of visit'),
 			'type' => 'radiobuttons',
-			'values' => array (
-				'Polar Museum visit'	=> 'Museum visit - self-guided (run entirely by the teacher or group leader)',
-				'Polar Museum workshop'	=> 'Museum workshop (run by a member of museum staff); Thursdays/Fridays only',
-				'Polar Museum tour'		=> 'Museum tour (led by a member of museum staff) - costs £80',
-				'Polar Museum'			=> 'Other (please give details)',
-			)
 		);
 		$attributes['institutionType'] = array (
 			'heading' => array (3 => 'Group details'),
