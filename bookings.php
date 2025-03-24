@@ -137,7 +137,7 @@ class bookings extends frontControllerApplication
 		--	  `revisit` enum('','Yes','No') NOT NULL COMMENT 'Have you visited before?',
 		--	  `heardof` enum('','Word of mouth','Visited before','Live locally','Newspaper','Other printed materials','Website','Twitter','Facebook','Other') NOT NULL COMMENT 'How did you hear about us?',
 			  `date` date NOT NULL COMMENT 'Requested date',
-		--	  `alternativeDates` varchar(255) DEFAULT NULL COMMENT 'Possible alternative dates',
+		--	  `alternativeDates` VARCHAR(255) DEFAULT NULL COMMENT 'If there are multiple requests from others for this date, are there any other days when you could visit?',
 			  `place` varchar(255) NOT NULL COMMENT 'Preferred timeslot',
 		--	  `participants` int(2) UNSIGNED NOT NULL COMMENT 'Number of participants<br />(max 25 adults, or one class of children)',
 		--	  `ageGroups` SET('0-5 years old (Early years)','5-7 years old (UK: KS1)','7-11 years old (UK: KS2)','11-14 years old (UK: KS3)','14-16 years old (UK: KS4)','Further Education','Higher Education') NOT NULL COMMENT 'Age group(s)',
@@ -940,8 +940,15 @@ class bookings extends frontControllerApplication
 			'separator' => ',', /* #!# Ideally wouldn't be required - see note in ultimateForm re defaultPresplit */
 		);
 		
+		# Customise the date / alternative date fields texts to state specific weekdays; this is overridden below in weeks mode
+		$attributes['date'] = array (
+			'title' => 'Requested date<br />(' . str_replace (',', 's / ', $this->settings['weekdays']) . 's only)',
+		);
+		$attributes['alternativeDates'] = array (
+			'title' => 'If there are multiple requests from others for this date, are there any other ' . str_replace (',', 's / ', $this->settings['weekdays']) . 's when you could visit?',
+		);
+		
 		# If the booking period is in weeks, convert the requested date and alternative date to week drop-down lists
-		$attributes['date'] = array ();
 		if ($this->settings['period'] == 'weeks') {
 			$datesFormatted = array ();
 			foreach ($dates as $date) {
