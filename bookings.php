@@ -27,6 +27,7 @@ class bookings extends frontControllerApplication
 			'settings' => true,
 			'settingsTableExplodeTextarea' => true,
 			'serverAdministrator'	=> NULL,	// E-mail address of the server administrator
+			'recordErasureYears' => 5,
 			'form' => true,
 			'div' => 'bookings',
 			'formDiv' => 'lines ultimateform horizontalonly bookingform',
