@@ -5,7 +5,7 @@
     "license": "GPL-3.0-only",
     "minimum-stability": "stable",
     "require": {
-        "libpurecontent/frontcontrollerapplication": "^1.13",
+        "libpurecontent/frontcontrollerapplication": "^1.13.9",
         "libpurecontent/timedate": "^1.4",
         "libpurecontent/ical": "^1.1",
         "libpurecontent/application": "^1.9",
