@@ -22,7 +22,7 @@ class bookings extends frontControllerApplication
 			'username' => 'bookings',
 			'password' => NULL,
 			'database' => 'bookings',
-			'table' => 'bookings',
+			'table' => 'requests',
 			'administrators' => true,
 			'settings' => true,
 			'settingsTableExplodeTextarea' => true,
@@ -337,7 +337,7 @@ class bookings extends frontControllerApplication
 		# Add in actual bookings; slot '_' represents auto-allocation
 		$query = "SELECT
 				id,date,place,'_' AS slot,bookingFor,IF(approved='Approved',1,'') AS approved,IF(approved='Unreviewed','',1) AS reviewed,'request' AS type
-			FROM {$this->settings['database']}.requests
+			FROM {$this->settings['database']}.{$this->settings['table']}
 			WHERE
 				    `date` >= '{$firstDate}'
 				AND `date` <= '{$untilDate}'
@@ -755,7 +755,7 @@ class bookings extends frontControllerApplication
 		$html .= "\n<h2>Request a booking for: <u>" . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . '</u> on <u>' . timedate::convertBackwardsDateToText ($date) . '</u>' . '</h2>';
 		
 		# Determine the e-mail introductory text, which will include the link to the record about to be written; sending the e-mail manually just after the database write is very messy
-		$currentHighestIdQuery = "SELECT MAX(id) AS currentHighestId FROM {$this->settings['database']}.requests;";
+		$currentHighestIdQuery = "SELECT MAX(id) AS currentHighestId FROM {$this->settings['database']}.{$this->settings['table']};";
 		$currentHighestId = $this->databaseConnection->getOneField ($currentHighestIdQuery, 'currentHighestId');
 		$predictedId = $currentHighestId + 1;
 		#!# Need to make this configurable in the settings
@@ -789,7 +789,7 @@ class bookings extends frontControllerApplication
 		}
 		
 		# Set internal fields to be excluded
-		$exclude = $this->databaseConnection->getFieldNames ($this->settings['database'], 'requests', false, $matchingRegexpNoForwardSlashes = '^internal.+');
+		$exclude = $this->databaseConnection->getFieldNames ($this->settings['database'], $this->settings['table'], false, $matchingRegexpNoForwardSlashes = '^internal.+');
 		if (!$this->userIsAdministrator) {
 			$exclude[] = 'approved';
 		}
@@ -797,7 +797,7 @@ class bookings extends frontControllerApplication
 		# Databind the form
 		$form->dataBinding (array (
 			'database' => $this->settings['database'],
-			'table' => 'requests',
+			'table' => $this->settings['table'],
 			'intelligence' => true,
 			'attributes' => $this->formDataBindingAttributes ($dates),
 			'exclude' => $exclude,
@@ -859,7 +859,7 @@ class bookings extends frontControllerApplication
 		if ($result = $form->process ($html)) {
 			
 			# Save to the database
-			if (!$this->databaseConnection->insert ($this->settings['database'], 'requests', $result)) {
+			if (!$this->databaseConnection->insert ($this->settings['database'], $this->settings['table'], $result)) {
 				#!# The e-mail is still sent though
 				$html = "<p>Apologies, an error occured when saving your submission. Please contact the Webmaster.</p>";
 				if ($this->userIsAdministrator) {
@@ -1109,7 +1109,7 @@ class bookings extends frontControllerApplication
 			}
 			
 			# Update the data
-			if (!$this->databaseConnection->updateMany ($this->settings['database'], 'requests', $updates)) {
+			if (!$this->databaseConnection->updateMany ($this->settings['database'], $this->settings['table'], $updates)) {
 				application::dumpData ($this->databaseConnection->error ());
 			}
 			
@@ -1191,13 +1191,13 @@ class bookings extends frontControllerApplication
 		# Get the bookings data
 		$query = "SELECT
 			*
-			FROM {$this->settings['database']}.requests
+			FROM {$this->settings['database']}.{$this->settings['table']}
 			WHERE
 				approved = 'Approved'
 				" . $dateLimitSql . "
 			ORDER BY `date`, place
 		;";
-		$bookings = $this->databaseConnection->getData ($query, "{$this->settings['database']}.requests");
+		$bookings = $this->databaseConnection->getData ($query, "{$this->settings['database']}.{$this->settings['table']}");
 		
 		# Split records with multiple place slots (e.g. 'morning,afternoon') into multiple records, if required (useful for iCal but not calendar view)
 		if ($splitMultiple) {
