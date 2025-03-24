@@ -140,7 +140,7 @@ class bookings extends frontControllerApplication
 		--	  `alternativeDates` varchar(255) DEFAULT NULL COMMENT 'Possible alternative dates',
 			  `place` varchar(255) NOT NULL COMMENT 'Preferred timeslot',
 		--	  `participants` int(2) UNSIGNED NOT NULL COMMENT 'Number of participants<br />(max 25 adults, or one class of children)',
-		--	  `ageGroups` set('0-5 years old (Early years)','5-7 years old (UK: KS1)','7-11 years old (UK: KS2)','11-14 years old (UK: KS3)','14-18 years old','Higher Education','Adult') NOT NULL COMMENT 'Age group(s)',
+		--	  `ageGroups` SET('0-5 years old (Early years)','5-7 years old (UK: KS1)','7-11 years old (UK: KS2)','11-14 years old (UK: KS3)','14-16 years old (UK: KS4)','Further Education','Higher Education') NOT NULL COMMENT 'Age group(s)',
 		--	  `adults` int(2) UNSIGNED DEFAULT NULL COMMENT 'Number of accompanying adults (for groups of children under the age of 18)',
 		--	  `specialNeeds` varchar(255) DEFAULT NULL COMMENT 'Any special needs?',
 		--	  `comments` text COMMENT 'Any other information/comments/requests',
