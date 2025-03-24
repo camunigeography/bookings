@@ -347,6 +347,13 @@ class bookings extends frontControllerApplication
 		$rawDataRequests = $this->databaseConnection->getData ($query);
 		$rawDataRequests = $this->databaseConnection->splitSetToMultipleRecords ($rawDataRequests, 'place');
 		
+		# Filter booking data at model level for non-admins
+		if (!$this->userIsAdministrator) {
+			foreach ($rawDataRequests as $key => $rawDataRequest) {
+				$rawDataRequests[$key]['bookingFor'] = NULL;
+			}
+		}
+		
 		# Merge
 		$bookings = array_merge ($rawDataManual, $rawDataRequests);
 		
@@ -577,7 +584,7 @@ class bookings extends frontControllerApplication
 						
 						# Set the default cell value
 						$table[$key][$column] = '<span class="booked"' . ($this->userIsAdministrator ? ' title="' . htmlspecialchars ($booking['bookingFor']) . '"' : '') . '>Booked</span>';
-						$hoverTexts[$date][$placeAttributes['label']] = $booking['bookingFor'];
+						$hoverTexts[$date][$placeAttributes['label']] = ($this->userIsAdministrator ? htmlspecialchars ($booking['bookingFor']) : '');
 						
 						# If the user is edit mode (and therefore an Administrator), instead give more details
 						if ($editMode) {
@@ -614,14 +621,16 @@ class bookings extends frontControllerApplication
 			}
 		}
 		
-		# Compile hover texts by date
+		# Compile hover texts to HTML by date; non-admins get no hover text, as it would be confusing to list now-unavailable booked times as hover text over a still-available slot
 		$hoverTextsHtml = array ();
-		foreach ($hoverTexts as $date => $slots) {
-			$slotsTexts = array ();
-			foreach ($slots as $label => $hoverText) {
-				$slotsTexts[] = htmlspecialchars ($label) . ': ' . htmlspecialchars ($hoverText);
+		if ($this->userIsAdministrator) {
+			foreach ($hoverTexts as $date => $slots) {
+				$slotsTexts = array ();
+				foreach ($slots as $label => $hoverText) {
+					$slotsTexts[] = htmlspecialchars ($label) . ($hoverText ? ': ' . htmlspecialchars ($hoverText) : '');
+				}
+				$hoverTextsHtml[$date] = implode ('&#10;', $slotsTexts);
 			}
-			$hoverTextsHtml[$date] = implode ('&#10;', $slotsTexts);
 		}
 		
 		# Determine the headings
