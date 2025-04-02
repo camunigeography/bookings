@@ -32,6 +32,7 @@ class bookings extends frontControllerApplication
 			'div' => 'bookings',
 			'formDiv' => 'lines ultimateform horizontalonly bookingform',
 			'formValidationCallback' => false,
+			'formDeprecatedFields' => array (),		// Legacy fields that should be hidden from the request form
 			'tabUlClass' => 'tabsflat',
 		);
 		
@@ -800,6 +801,11 @@ class bookings extends frontControllerApplication
 		$exclude = $this->databaseConnection->getFieldNames ($this->settings['database'], $this->settings['table'], false, $matchingRegexpNoForwardSlashes = '^internal.+');
 		if (!$this->userIsAdministrator) {
 			$exclude[] = 'approved';
+		}
+		
+		# If any deprecated fields are supplied, exclude them; this enables the data to be kept in the database but no longer shown in the request form
+		foreach ($this->settings['formDeprecatedFields'] as $deprecatedField) {
+			$exclude[] = $deprecatedField;
 		}
 		
 		# Databind the form
