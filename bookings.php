@@ -156,6 +156,7 @@ class bookings extends frontControllerApplication
 			  `id` int(11) NOT NULL COMMENT 'Automatic key (ignored)' AUTO_INCREMENT PRIMARY KEY,
 			  `applicationName` VARCHAR(255) NOT NULL DEFAULT 'Booking request' COMMENT 'Application name',
 			  `recipient` VARCHAR(255) NOT NULL COMMENT 'E-mail recipient',
+			  `dateSelectionView` tinyint DEFAULT '1' COMMENT 'Show date selection listing?',
 			  `listMonthsAheadPublic` int(2) NOT NULL DEFAULT '3' COMMENT 'How many months ahead to list (public)',
 			  `listMonthsAheadPrivate` int(2) NOT NULL DEFAULT '12' COMMENT 'How many months ahead to list (private)',
 			  `period` ENUM('days','weeks') NOT NULL DEFAULT 'days' COMMENT 'Booking period',
@@ -223,7 +224,7 @@ class bookings extends frontControllerApplication
 			'attributes' => array (
 				'applicationName'		=> array ('heading' => array (3 => 'Title')),
 				'recipient'				=> array ('heading' => array (3 => 'Notifications')),
-				'listMonthsAheadPublic'	=> array ('heading' => array (3 => 'Listings of bookable places')),
+				'dateSelectionView'		=> array ('heading' => array (3 => 'Listings of bookable places')),
 				'weeksEarliestDate'		=> array ('picker' => true),
 				'places'				=> array ('heading' => array (3 => 'Places')),
 				'calendarWeeksBack'		=> array ('heading' => array (3 => 'Calendar feed')),
@@ -424,11 +425,18 @@ class bookings extends frontControllerApplication
 		# Button and introduction for admins
 		if ($this->userIsAdministrator) {
 			$html .= "\n" . '<p class="actions right"><a href="' . $this->baseUrl . '/edit.html"><img src="/images/icons/pencil.png" alt="" /> Edit</a></p>';
-			$html .= "\n" . '<p><img src="/images/icons/asterisk_yellow.png" alt="Info" class="icon" /> As an Administrator, you can hover the mouse over any booked slot to see details.</p>';
+			if ($this->settings['dateSelectionView']) {
+				$html .= "\n" . '<p><img src="/images/icons/asterisk_yellow.png" alt="Info" class="icon" /> As an Administrator, you can hover the mouse over any booked slot to see details.</p>';
+			}
 		}
 		
 		# Show the table
-		$html .= $this->createListing ();
+		if ($this->settings['dateSelectionView']) {
+			$html .= $this->createListing ();
+		} else {
+			$html .= "\n<p>Please fill in the form to enquire about a booking.";
+			$html .= "\n<p><a href=\"{$this->baseUrl}/request/\" class=\"campl-primary-cta\">Enquiry form</a></p>";
+		}
 		
 		# Show the HTML
 		echo $html;
@@ -719,12 +727,6 @@ class bookings extends frontControllerApplication
 		# Start the HTML
 		$html = '';
 		
-		# Ensure a date is set
-		if (!isSet ($_GET['date'])) {
-			echo "\n<p class=\"warning\">You didn't specify a date.</p>";
-			return false;
-		}
-		
 		# Get the dates; admins can access all dates
 		if ($this->userIsAdministrator) {
 			$dates = $this->getDates (true, true);
@@ -732,38 +734,50 @@ class bookings extends frontControllerApplication
 			$dates = $this->getDates ();
 		}
 		
-		# Ensure it is a valid date by adding the hyphens in then checking it is in the generated list of dates
-		list ($year, $month, $day) = sscanf ($_GET['date'], '%4s%2s%2s');
-		$date = "{$year}-{$month}-{$day}";
-		if (!in_array ($date, $dates)) {
-			echo "\n<p class=\"warning\">The date you selected is not valid. Please check the URL and try again.</p>";
-			return false;
-		}
-		
-		# Ensure a place is specified
-		if (!isSet ($_GET['place'])) {
-			echo "\n<p class=\"warning\">You didn't specify a place.</p>";
-			return false;
-		}
-		
-		# Ensure the specified place is valid
-		if (!array_key_exists ($_GET['place'], $this->places)) {
-			echo "\n<p class=\"warning\">The place you selected is not valid. Please check the URL and try again.</p>";
-			return false;
-		}
-		$place = $_GET['place'];
-		
 		# Get the booked slots data (which may be empty)
 		$bookedSlotsData = $this->getBookedSlotsData ($dates);
 		
-		# Ensure there are places available for the specified date and place
-		if (!$this->placesAvailable ($dates, $bookedSlotsData, $date, $place, $errorMessageHtml)) {
-			echo "\n{$errorMessageHtml}";
-			return false;
+		# In date selection mode, i.e. list/calendar shown, require a date/place
+		$date = false;
+		$place = false;
+		if ($this->settings['dateSelectionView']) {
+			
+			# Ensure a date is set
+			if (!isSet ($_GET['date'])) {
+				echo "\n<p class=\"warning\">You didn't specify a date.</p>";
+				return false;
+			}
+			
+			# Ensure it is a valid date by adding the hyphens in then checking it is in the generated list of dates
+			list ($year, $month, $day) = sscanf ($_GET['date'], '%4s%2s%2s');
+			$date = "{$year}-{$month}-{$day}";
+			if (!in_array ($date, $dates)) {
+				echo "\n<p class=\"warning\">The date you selected is not valid. Please check the URL and try again.</p>";
+				return false;
+			}
+			
+			# Ensure a place is specified
+			if (!isSet ($_GET['place'])) {
+				echo "\n<p class=\"warning\">You didn't specify a place.</p>";
+				return false;
+			}
+			
+			# Ensure the specified place is valid
+			if (!array_key_exists ($_GET['place'], $this->places)) {
+				echo "\n<p class=\"warning\">The place you selected is not valid. Please check the URL and try again.</p>";
+				return false;
+			}
+			$place = $_GET['place'];
+			
+			# Ensure there are places available for the specified date and place
+			if (!$this->placesAvailable ($dates, $bookedSlotsData, $date, $place, $errorMessageHtml)) {
+				echo "\n{$errorMessageHtml}";
+				return false;
+			}
 		}
 		
 		# Start the HTML
-		$html .= "\n<h2>Request a booking for: <u>" . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . '</u> on <u>' . timedate::convertBackwardsDateToText ($date) . '</u>' . '</h2>';
+		$html .= "\n<h2>Request a booking" . ($this->settings['dateSelectionView'] ? ' for: <u>' . htmlspecialchars ($this->places[$place]['labelAbbreviatedLowercase']) . '</u> on <u>' . timedate::convertBackwardsDateToText ($date) . '</u>' : '') . '</h2>';
 		
 		# Determine the e-mail introductory text, which will include the link to the record about to be written; sending the e-mail manually just after the database write is very messy
 		$currentHighestIdQuery = "SELECT MAX(id) AS currentHighestId FROM {$this->settings['database']}.{$this->settings['table']};";
@@ -791,8 +805,12 @@ class bookings extends frontControllerApplication
 			'picker' => true,
 		));
 		
-		# Determine the form fields
-		$form->heading ('p', application::htmlUl (array ("<a href=\"{$this->baseUrl}/\">Back to list of dates</a>")));
+		# Link back to dates, to enable the user to back out
+		if ($this->settings['dateSelectionView']) {
+			$form->heading ('p', application::htmlUl (array ("<a href=\"{$this->baseUrl}/\">Back to list of dates</a>")));
+		}
+		
+		# Introduction text, if any
 		if ($this->settings['bookingPageTextHtml']) {
 			$form->heading ('', $this->settings['bookingPageTextHtml']);
 		}

@@ -13,6 +13,8 @@
 	Use MacroFrontControllerApplication "$baseUrl/" "Bookings"
 	RewriteRule ^$baseUrl/request/([0-9]{8})/([^/]+)/ $baseUrl/index.html?action=request&date=$1&place=$2 [L]
 	RedirectMatch Permanent ^$baseUrl/request/([0-9]{8})/([^/]+)$ $baseUrl/request/$1/$2/
+	RewriteRule ^$baseUrl/(request)/$ $baseUrl/index.html?action=$1 [L]
+	RewriteRule ^$baseUrl/(request)$ $baseUrl/$1/ [R]
 	RewriteRule ^$baseUrl/(calendar)/$ $baseUrl/index.html?action=$1 [L]
 	RewriteRule ^$baseUrl/(calendar)$ $baseUrl/$1/ [R]
 	RewriteRule ^$baseUrl/edit.html $baseUrl/index.html?action=edit [L]
