@@ -434,7 +434,7 @@ class bookings extends frontControllerApplication
 		if ($this->settings['dateSelectionView']) {
 			$html .= $this->createListing ();
 		} else {
-			$html .= "\n<p>Please fill in the form to enquire about a booking.";
+			$html .= "\n<p>Please fill in the form to request a booking.";
 			$html .= "\n<p><a href=\"{$this->baseUrl}/request/\" class=\"campl-primary-cta\">Enquiry form</a></p>";
 		}
 		
