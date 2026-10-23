@@ -11,6 +11,7 @@ class bookings extends frontControllerApplication
 {
 	# Class properties
 	private $firstPrivateDate = false;
+	private $places;
 	
 	
 	# Function to assign defaults additional to the general application defaults
