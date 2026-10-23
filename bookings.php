@@ -1106,7 +1106,7 @@ class bookings extends frontControllerApplication
 				'Booking for'		=> htmlspecialchars ($booking['bookingFor']),
 				'Contact'			=> htmlspecialchars ($booking['name']) . '<br />' . htmlspecialchars ($booking['telephone']) . '<br /><p class="small">' . htmlspecialchars ($booking['email']) . '</p>',
 				'Participants'		=> $booking['participants'] . '<br />' . $booking['ageGroups'],
-				'Content'			=> application::htmlUl (explode (',', htmlspecialchars ($booking['internalVisitContent'])), 0, 'lightlyspaced'),
+				'Content'			=> ($booking['internalVisitContent'] ? application::htmlUl (explode (',', htmlspecialchars ($booking['internalVisitContent'])), 0, 'lightlyspaced') : ''),
 				'Notes (internal)'	=> '{internalPhoneCallLog_' . $booking['id'] . '}',
 			);
 		}
@@ -1218,7 +1218,7 @@ class bookings extends frontControllerApplication
 	{
 		# Date limitation
 		$dateLimitSql = '';
-		if (strlen ($this->settings[$weeksBackSetting])) {
+		if ($this->settings[$weeksBackSetting] && strlen ($this->settings[$weeksBackSetting])) {
 			$dateLimitSql = " AND `date` >= DATE_SUB(CURDATE(), INTERVAL {$this->settings[$weeksBackSetting]} WEEK) ";
 		}
 		
